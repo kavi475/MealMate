@@ -1,0 +1,555 @@
+.item-detail-page {
+  padding: 40px 0 60px;
+  background: #f9fafb;
+  min-height: 80vh;
+}
+
+/* BACK LINK */
+.back-link {
+  display: inline-block;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 1rem;
+  margin-bottom: 30px;
+  transition: color 0.3s ease;
+}
+
+.back-link:hover {
+  color: #f97316;
+}
+
+/* DETAIL CONTENT */
+.item-detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* IMAGE SECTION with REAL IMAGE */
+.item-detail-image {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-image {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  object-fit: cover;
+}
+
+/* Badges on Image */
+.veg-badge,
+.nonveg-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.veg-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.nonveg-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.availability-badge {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.availability-badge.available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.availability-badge.unavailable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* INFO SECTION */
+.item-detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.item-detail-name {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.item-detail-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.item-rating {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.item-category {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.item-prep {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.item-detail-description {
+  color: #4b5563;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.item-detail-specs {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+
+.spec-item {
+  padding: 4px 12px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+/* PRICE */
+.item-detail-price {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 2px solid #f3f4f6;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.price-label {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.price-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f97316;
+}
+
+/* QUANTITY SELECTOR */
+.item-quantity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.quantity-label {
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.qty-number {
+  min-width: 32px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+/* ACTIONS */
+.item-detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.item-detail-actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.item-detail-actions .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-block;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #f97316;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #ea580c;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);
+}
+
+.btn-secondary {
+  background: white;
+  color: #f97316;
+  border: 2px solid #f97316;
+}
+
+.btn-secondary:hover {
+  background: #fff7ed;
+  transform: translateY(-2px);
+}
+
+.btn-lg {
+  padding: 14px 36px;
+  font-size: 1.1rem;
+}
+
+/* REVIEWS SECTION */
+.reviews-section {
+  margin-top: 40px;
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.reviews-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.review-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.review-user {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.review-rating {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.review-comment {
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.no-reviews {
+  color: #6b7280;
+  text-align: center;
+  padding: 20px 0;
+  margin: 0;
+}
+
+/* LOADING & ERROR STATES */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p {
+  color: #6b7280;
+  margin-top: 16px;
+}
+
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.error-state h3 {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.error-state p {
+  color: #6b7280;
+  margin: 0 0 20px 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+  .item-detail-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 30px;
+  }
+
+  .item-detail-image {
+    min-height: 280px;
+  }
+
+  .detail-image {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .item-detail-content {
+    grid-template-columns: 1fr;
+    padding: 24px;
+    gap: 24px;
+  }
+
+  .item-detail-image {
+    min-height: 200px;
+  }
+
+  .detail-image {
+    min-height: 200px;
+  }
+
+  .item-detail-name {
+    font-size: 1.5rem;
+  }
+
+  .item-detail-actions {
+    flex-direction: column;
+  }
+
+  .item-detail-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .price-value {
+    font-size: 1.5rem;
+  }
+
+  .reviews-section {
+    padding: 20px;
+  }
+
+  .veg-badge,
+  .nonveg-badge {
+    top: 12px;
+    left: 12px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+  }
+
+  .availability-badge {
+    bottom: 12px;
+    right: 12px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .item-detail-page {
+    padding: 20px 0 40px;
+  }
+
+  .item-detail-content {
+    padding: 16px;
+  }
+
+  .item-detail-image {
+    min-height: 150px;
+  }
+
+  .detail-image {
+    min-height: 150px;
+  }
+
+  .item-detail-name {
+    font-size: 1.3rem;
+  }
+
+  .item-detail-meta {
+    gap: 10px;
+    font-size: 0.85rem;
+  }
+
+  .item-detail-description {
+    font-size: 0.95rem;
+  }
+
+  .price-value {
+    font-size: 1.3rem;
+  }
+
+  .item-quantity {
+    flex-wrap: wrap;
+  }
+
+  .qty-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .qty-number {
+    min-width: 28px;
+    font-size: 0.9rem;
+  }
+
+  .btn-lg {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+
+  .reviews-section {
+    padding: 16px;
+    margin-top: 24px;
+  }
+
+  .review-item {
+    padding: 12px 0;
+  }
+
+  .review-user {
+    font-size: 0.9rem;
+  }
+
+  .review-rating {
+    font-size: 0.85rem;
+  }
+
+  .review-comment {
+    font-size: 0.9rem;
+  }
+
+  .veg-badge,
+  .nonveg-badge {
+    top: 8px;
+    left: 8px;
+    padding: 3px 10px;
+    font-size: 0.6rem;
+  }
+
+  .availability-badge {
+    bottom: 8px;
+    right: 8px;
+    padding: 3px 10px;
+    font-size: 0.6rem;
+  }
+}
