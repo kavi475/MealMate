@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import api from "../utils/api";
 import "../css/ChangePassword.css";
 
 export const ChangePassword = () => {
@@ -21,7 +22,7 @@ export const ChangePassword = () => {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.newPassword.length < 6) {
@@ -34,15 +35,28 @@ export const ChangePassword = () => {
       return;
     }
 
+    if (!formData.currentPassword) {
+      setError("Please enter your current password");
+      return;
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await api.put("/users/change-password", {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
+
       setSuccess(true);
       setTimeout(() => {
         navigate("/profile");
       }, 2000);
-    }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "../css/Auth.css";
 
 export const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -13,14 +16,11 @@ export const Login = () => {
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -29,12 +29,18 @@ export const Login = () => {
     }
 
     setLoading(true);
+    const result = await login(formData.email, formData.password);
+    setLoading(false);
 
-    // Simulate login
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/");
-    }, 1500);
+    if (result.success) {
+      if (result.user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+    } else {
+      setError(result.error);
+    }
   };
 
   return (
@@ -122,6 +128,16 @@ export const Login = () => {
                 Register here
               </NavLink>
             </p>
+
+            <div className="demo-credentials">
+              <p className="demo-title">📧 Demo Credentials:</p>
+              <p className="demo-item">
+                👤 User: john@university.edu / john123
+              </p>
+              <p className="demo-item">
+                👑 Admin: admin@mealmate.com / admin123
+              </p>
+            </div>
           </div>
         </div>
       </div>

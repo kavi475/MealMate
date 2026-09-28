@@ -1,80 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import api from "../../utils/api";
 import "../css/AdminDashboard.css";
 
 export const AdminDashboard = () => {
-  const stats = [
-    {
-      id: 1,
-      label: "Total Orders",
-      value: "1,247",
-      icon: "📦",
-      color: "#3b82f6",
-      change: "+12%",
-    },
-    {
-      id: 2,
-      label: "Revenue",
-      value: "₹2,48,900",
-      icon: "💰",
-      color: "#10b981",
-      change: "+8%",
-    },
-    {
-      id: 3,
-      label: "Total Users",
-      value: "1,892",
-      icon: "👤",
-      color: "#8b5cf6",
-      change: "+5%",
-    },
-    {
-      id: 4,
-      label: "Menu Items",
-      value: "48",
-      icon: "🍽️",
-      color: "#f97316",
-      change: "+2",
-    },
-  ];
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const recentOrders = [
-    {
-      id: "ORD-2024-009",
-      customer: "Rahul Sharma",
-      total: "₹497",
-      status: "delivered",
-      time: "2 min ago",
-    },
-    {
-      id: "ORD-2024-008",
-      customer: "Priya Patel",
-      total: "₹249",
-      status: "preparing",
-      time: "10 min ago",
-    },
-    {
-      id: "ORD-2024-007",
-      customer: "Amit Kumar",
-      total: "₹326",
-      status: "confirmed",
-      time: "25 min ago",
-    },
-    {
-      id: "ORD-2024-006",
-      customer: "Sneha Reddy",
-      total: "₹179",
-      status: "pending",
-      time: "45 min ago",
-    },
-  ];
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/admin/dashboard");
+      setData(response.data);
+      setError("");
+    } catch (err) {
+      console.error("Dashboard error:", err);
+      setError(err.response?.data?.error || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const topItems = [
-    { name: "Crispy Veg Burger", orders: 342, revenue: "₹68,058", icon: "🍔" },
-    { name: "Paneer Tikka Pizza", orders: 287, revenue: "₹71,463", icon: "🍕" },
-    { name: "Masala Dosa", orders: 245, revenue: "₹31,605", icon: "🥞" },
-    { name: "Chicken Tikka Roll", orders: 198, revenue: "₹35,442", icon: "🌯" },
-  ];
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
   const getStatusColor = (status) => {
     const colors = {
@@ -88,9 +38,67 @@ export const AdminDashboard = () => {
     return colors[status] || "#6b7280";
   };
 
+  const getStatusIcon = (status) => {
+    const icons = {
+      pending: "⏳",
+      confirmed: "✅",
+      preparing: "👨‍🍳",
+      ready: "📦",
+      delivered: "🚚",
+      cancelled: "❌",
+    };
+    return icons[status] || "📋";
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  };
+
+  if (loading) {
+    return (
+      <div className="admin-dashboard">
+        <div className="admin-container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="admin-dashboard">
+        <div className="admin-container">
+          <div className="error-state">
+            <div className="error-icon">😢</div>
+            <h3>Failed to load dashboard</h3>
+            <p>{error}</p>
+            <button className="btn btn-primary" onClick={fetchDashboard}>
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { stats, statusCounts, recentOrders, topItems } = data;
+
   return (
     <div className="admin-dashboard">
       <div className="admin-container">
+        {/* Header */}
         <div className="admin-header">
           <div>
             <h1 className="page-title">📊 Admin Dashboard</h1>
@@ -98,35 +106,104 @@ export const AdminDashboard = () => {
               Welcome back! Here's what's happening today.
             </p>
           </div>
-          <NavLink to="/admin/menu" className="btn btn-primary">
-            ➕ Add New Item
-          </NavLink>
+          <button className="btn btn-secondary" onClick={fetchDashboard}>
+            🔄 Refresh
+          </button>
         </div>
 
+        {/* Stats Grid */}
         <div className="stats-grid">
-          {stats.map((stat) => (
-            <div key={stat.id} className="stat-card">
-              <div
-                className="stat-icon"
-                style={{
-                  backgroundColor: `${stat.color}15`,
-                  color: stat.color,
-                }}
-              >
-                {stat.icon}
-              </div>
-              <div className="stat-content">
-                <p className="stat-label">{stat.label}</p>
-                <h3 className="stat-value">{stat.value}</h3>
-                <span className="stat-change">
-                  {stat.change} from last month
-                </span>
-              </div>
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#3b82f615", color: "#3b82f6" }}
+            >
+              📦
             </div>
-          ))}
+            <div className="stat-content">
+              <p className="stat-label">Total Orders</p>
+              <h3 className="stat-value">{stats.totalOrders}</h3>
+              <span className="stat-change">{stats.todayOrders} today</span>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#10b98115", color: "#10b981" }}
+            >
+              💰
+            </div>
+            <div className="stat-content">
+              <p className="stat-label">Revenue</p>
+              <h3 className="stat-value">
+                ₹{stats.totalRevenue.toLocaleString()}
+              </h3>
+              <span className="stat-change">
+                ₹{stats.todayRevenue.toLocaleString()} today
+              </span>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#8b5cf615", color: "#8b5cf6" }}
+            >
+              👤
+            </div>
+            <div className="stat-content">
+              <p className="stat-label">Total Users</p>
+              <h3 className="stat-value">{stats.totalUsers}</h3>
+              <span className="stat-change">Registered customers</span>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{ backgroundColor: "#f9731615", color: "#f97316" }}
+            >
+              🍽️
+            </div>
+            <div className="stat-content">
+              <p className="stat-label">Menu Items</p>
+              <h3 className="stat-value">{stats.totalMenuItems}</h3>
+              <span className="stat-change">
+                {stats.activeMenuItems} available
+              </span>
+            </div>
+          </div>
         </div>
 
+        {/* Order Status Breakdown */}
+        <div className="dashboard-card">
+          <div className="card-header">
+            <h2>📈 Order Status Breakdown</h2>
+            <NavLink to="/admin/orders" className="view-all">
+              Manage Orders →
+            </NavLink>
+          </div>
+          <div className="status-breakdown">
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <div key={status} className="status-item">
+                <span
+                  className="status-dot"
+                  style={{ backgroundColor: getStatusColor(status) }}
+                ></span>
+                <span className="status-name">
+                  {getStatusIcon(status)}{" "}
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </span>
+                <span className="status-count">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Two Column Layout */}
         <div className="dashboard-grid">
+          {/* Recent Orders */}
           <div className="dashboard-card">
             <div className="card-header">
               <h2>📋 Recent Orders</h2>
@@ -134,28 +211,39 @@ export const AdminDashboard = () => {
                 View All →
               </NavLink>
             </div>
-            <div className="orders-list">
-              {recentOrders.map((order) => (
-                <div key={order.id} className="order-row">
-                  <div className="order-info">
-                    <span className="order-id">{order.id}</span>
-                    <span className="order-customer">{order.customer}</span>
+            {recentOrders.length > 0 ? (
+              <div className="orders-list">
+                {recentOrders.map((order) => (
+                  <div key={order._id} className="order-row">
+                    <div className="order-info">
+                      <span className="order-id">{order.orderId}</span>
+                      <span className="order-customer">
+                        {order.userId?.name || "Unknown"}
+                      </span>
+                    </div>
+                    <div className="order-meta">
+                      <span className="order-total">₹{order.total}</span>
+                      <span
+                        className="order-status"
+                        style={{ color: getStatusColor(order.status) }}
+                      >
+                        ● {order.status}
+                      </span>
+                      <span className="order-time">
+                        {formatTime(order.createdAt)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="order-meta">
-                    <span className="order-total">{order.total}</span>
-                    <span
-                      className="order-status"
-                      style={{ color: getStatusColor(order.status) }}
-                    >
-                      ● {order.status}
-                    </span>
-                    <span className="order-time">{order.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-dashboard">
+                <p>No orders yet</p>
+              </div>
+            )}
           </div>
 
+          {/* Top Selling Items */}
           <div className="dashboard-card">
             <div className="card-header">
               <h2>🔥 Top Selling Items</h2>
@@ -163,22 +251,46 @@ export const AdminDashboard = () => {
                 Reports →
               </NavLink>
             </div>
-            <div className="top-items-list">
-              {topItems.map((item, index) => (
-                <div key={index} className="top-item-row">
-                  <span className="item-rank">#{index + 1}</span>
-                  <span className="item-icon">{item.icon}</span>
-                  <div className="item-info">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-orders">{item.orders} orders</span>
+            {topItems.length > 0 ? (
+              <div className="top-items-list">
+                {topItems.map((item, index) => (
+                  <div key={index} className="top-item-row">
+                    <span className="item-rank">#{index + 1}</span>
+                    <img
+                      src={item.image}
+                      alt={item._id}
+                      className="item-thumb-sm"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        if (e.target.nextSibling) {
+                          e.target.nextSibling.style.display = "flex";
+                        }
+                      }}
+                    />
+                    <span className="item-emoji-sm" style={{ display: "none" }}>
+                      🍽️
+                    </span>
+                    <div className="item-info">
+                      <span className="item-name">{item._id}</span>
+                      <span className="item-orders">
+                        {item.totalOrders} orders
+                      </span>
+                    </div>
+                    <span className="item-revenue">
+                      ₹{item.totalRevenue.toLocaleString()}
+                    </span>
                   </div>
-                  <span className="item-revenue">{item.revenue}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-dashboard">
+                <p>No sales data yet</p>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Quick Actions */}
         <div className="dashboard-card">
           <div className="card-header">
             <h2>⚡ Quick Actions</h2>

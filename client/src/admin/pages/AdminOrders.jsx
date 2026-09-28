@@ -1,88 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../utils/api";
 import "../css/AdminOrders.css";
 
 export const AdminOrders = () => {
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    delivered: 0,
+    revenue: 0
+  });
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState("");
 
-  const [orders, setOrders] = useState([
-    {
-      id: "ORD-2024-009",
-      customer: "Rahul Sharma",
-      phone: "+91 98765 43210",
-      items: 3,
-      total: 497,
-      status: "delivered",
-      payment: "Paid",
-      date: "2024-01-17 14:30",
-      address: "123 Campus Road, Delhi",
-    },
-    {
-      id: "ORD-2024-008",
-      customer: "Priya Patel",
-      phone: "+91 98765 43211",
-      items: 2,
-      total: 249,
-      status: "preparing",
-      payment: "Paid",
-      date: "2024-01-17 14:15",
-      address: "Block A, College Campus",
-    },
-    {
-      id: "ORD-2024-007",
-      customer: "Amit Kumar",
-      phone: "+91 98765 43212",
-      items: 4,
-      total: 326,
-      status: "confirmed",
-      payment: "Paid",
-      date: "2024-01-17 13:50",
-      address: "45 University Lane",
-    },
-    {
-      id: "ORD-2024-006",
-      customer: "Sneha Reddy",
-      phone: "+91 98765 43213",
-      items: 1,
-      total: 179,
-      status: "pending",
-      payment: "Pending",
-      date: "2024-01-17 13:30",
-      address: "789 Campus Colony",
-    },
-    {
-      id: "ORD-2024-005",
-      customer: "Vikram Singh",
-      phone: "+91 98765 43214",
-      items: 5,
-      total: 682,
-      status: "delivered",
-      payment: "Paid",
-      date: "2024-01-17 12:45",
-      address: "101 Hostel Block",
-    },
-    {
-      id: "ORD-2024-004",
-      customer: "Anjali Verma",
-      phone: "+91 98765 43215",
-      items: 2,
-      total: 416,
-      status: "cancelled",
-      payment: "Refunded",
-      date: "2024-01-17 12:00",
-      address: "202 Faculty Quarters",
-    },
-  ]);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/orders/admin/all");
+      setOrders(response.data.orders || []);
+      setStats(response.data.stats || {});
+      setError("");
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError(err.response?.data?.error || "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const statusOptions = [
-    { id: "all", label: "All", icon: "📋" },
-    { id: "pending", label: "Pending", icon: "⏳" },
-    { id: "confirmed", label: "Confirmed", icon: "✅" },
-    { id: "preparing", label: "Preparing", icon: "👨‍🍳" },
-    { id: "ready", label: "Ready", icon: "📦" },
-    { id: "delivered", label: "Delivered", icon: "🚚" },
-    { id: "cancelled", label: "Cancelled", icon: "❌" },
-  ];
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      fetchOrders();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to update status");
+    }
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -96,20 +55,35 @@ export const AdminOrders = () => {
     return colors[status] || "#6b7280";
   };
 
-  const handleStatusChange = (orderId, newStatus) => {
-    setOrders(
-      orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
-    );
-  };
-
   const filteredOrders = orders.filter((order) => {
-    const matchesStatus =
-      filterStatus === "all" || order.status === filterStatus;
+    const matchesStatus = filterStatus === "all" || order.status === filterStatus;
     const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase());
+      order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.userId?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="admin-orders-page">
+        <div className="admin-container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading orders...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-orders-page">
@@ -121,33 +95,34 @@ export const AdminOrders = () => {
               Track and manage all customer orders
             </p>
           </div>
+          <button className="btn btn-secondary" onClick={fetchOrders}>
+            🔄 Refresh
+          </button>
         </div>
 
+        {/* Stats */}
         <div className="order-stats">
           <div className="order-stat">
-            <span className="os-value">{orders.length}</span>
+            <span className="os-value">{stats.total || 0}</span>
             <span className="os-label">Total Orders</span>
           </div>
           <div className="order-stat">
-            <span className="os-value">
-              {orders.filter((o) => o.status === "pending").length}
-            </span>
+            <span className="os-value">{stats.pending || 0}</span>
             <span className="os-label">Pending</span>
           </div>
           <div className="order-stat">
-            <span className="os-value">
-              {orders.filter((o) => o.status === "delivered").length}
-            </span>
+            <span className="os-value">{stats.delivered || 0}</span>
             <span className="os-label">Delivered</span>
           </div>
           <div className="order-stat">
             <span className="os-value">
-              ₹{orders.reduce((s, o) => s + o.total, 0).toLocaleString()}
+              ₹{(stats.revenue || 0).toLocaleString()}
             </span>
             <span className="os-label">Total Revenue</span>
           </div>
         </div>
 
+        {/* Search */}
         <div className="order-controls">
           <div className="search-box">
             <span className="search-icon">🔍</span>
@@ -161,23 +136,22 @@ export const AdminOrders = () => {
           </div>
         </div>
 
+        {/* Status Filters */}
         <div className="status-filters">
-          {statusOptions.map((opt) => (
+          {["all", "pending", "confirmed", "preparing", "ready", "delivered", "cancelled"].map((status) => (
             <button
-              key={opt.id}
-              className={`filter-btn ${filterStatus === opt.id ? "active" : ""}`}
-              onClick={() => setFilterStatus(opt.id)}
+              key={status}
+              className={`filter-btn ${filterStatus === status ? "active" : ""}`}
+              onClick={() => setFilterStatus(status)}
             >
-              <span>{opt.icon}</span> {opt.label}
-              {opt.id !== "all" && (
-                <span className="filter-count">
-                  {orders.filter((o) => o.status === opt.id).length}
-                </span>
-              )}
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
           ))}
         </div>
 
+        {error && <div className="error-banner">{error}</div>}
+
+        {/* Table */}
         <div className="table-card">
           <div className="table-wrapper">
             <table className="data-table">
@@ -189,34 +163,41 @@ export const AdminOrders = () => {
                   <th>Total</th>
                   <th>Date & Time</th>
                   <th>Status</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.map((order) => (
-                  <tr key={order.id}>
+                  <tr key={order._id}>
                     <td>
-                      <span className="order-id-cell">{order.id}</span>
+                      <span className="order-id-cell">{order.orderId}</span>
                     </td>
                     <td>
                       <div className="customer-cell">
-                        <span className="customer-name">{order.customer}</span>
-                        <span className="customer-phone">{order.phone}</span>
+                        <span className="customer-name">
+                          {order.userId?.name || "N/A"}
+                        </span>
+                        <span className="customer-phone">
+                          {order.userId?.phone || ""}
+                        </span>
                       </div>
                     </td>
                     <td>
-                      <span className="items-count">{order.items} items</span>
+                      <span className="items-count">
+                        {order.items.length} items
+                      </span>
                     </td>
                     <td className="price-cell">₹{order.total}</td>
                     <td>
-                      <span className="date-cell">{order.date}</span>
+                      <span className="date-cell">
+                        {formatDate(order.createdAt)}
+                      </span>
                     </td>
                     <td>
                       <select
                         className="status-select"
                         value={order.status}
                         onChange={(e) =>
-                          handleStatusChange(order.id, e.target.value)
+                          handleStatusChange(order.orderId, e.target.value)
                         }
                         style={{ color: getStatusColor(order.status) }}
                       >
@@ -228,11 +209,6 @@ export const AdminOrders = () => {
                         <option value="cancelled">Cancelled</option>
                       </select>
                     </td>
-                    <td>
-                      <button className="action-btn view" title="View Details">
-                        👁️
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -242,7 +218,11 @@ export const AdminOrders = () => {
             <div className="empty-state">
               <div className="empty-icon">📦</div>
               <h3>No orders found</h3>
-              <p>Try adjusting your search or filter</p>
+              <p>
+                {orders.length === 0
+                  ? "No orders have been placed yet."
+                  : "Try adjusting your search or filter"}
+              </p>
             </div>
           )}
         </div>

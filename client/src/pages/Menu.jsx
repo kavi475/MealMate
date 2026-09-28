@@ -1,118 +1,59 @@
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import "../css/Menu.css";
 
 export const Menu = () => {
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const [menuItems, setMenuItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [addingId, setAddingId] = useState(null);
 
-  // ✅ Menu items with REAL IMAGE URLs
-  const menuItems = [
-    {
-      id: 1,
-      name: "Crispy Veg Cheese Burger",
-      description:
-        "Crunchy veggie patty with double cheddar, fresh lettuce and special sauce.",
-      price: 199,
-      category: "snacks",
-      veg: true,
-      rating: 4.5,
-      image:
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
-      prepTime: "10-15 min",
-    },
-    {
-      id: 2,
-      name: "Paneer Tikka Pizza",
-      description:
-        "Spicy marinated paneer cubes, onions, capsicum and melted cheese.",
-      price: 249,
-      category: "lunch",
-      veg: true,
-      rating: 4.8,
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop",
-      prepTime: "15-20 min",
-    },
-    {
-      id: 3,
-      name: "Special Masala Dosa",
-      description:
-        "Crispy dosa filled with delicious spiced potato curry and served with chutney.",
-      price: 129,
-      category: "breakfast",
-      veg: true,
-      rating: 4.7,
-      image:
-        "https://images.pexels.com/photos/39104603/pexels-photo-39104603.jpeg",
-      prepTime: "10-12 min",
-    },
-    {
-      id: 4,
-      name: "Chicken Tikka Roll",
-      description:
-        "Tender pieces of spicy chicken tikka wrapped with onions and fresh vegetables.",
-      price: 179,
-      category: "snacks",
-      veg: false,
-      rating: 4.6,
-      image:
-        "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
-      prepTime: "12-15 min",
-    },
-    {
-      id: 5,
-      name: "Cold Coffee",
-      description:
-        "Refreshing cold coffee blended with ice cream and delicious chocolate syrup.",
-      price: 89,
-      category: "beverages",
-      veg: true,
-      rating: 4.2,
-      image:
-        "https://images.pexels.com/photos/18142624/pexels-photo-18142624.jpeg",
-      prepTime: "5-7 min",
-    },
-    {
-      id: 6,
-      name: "Chicken Fried Rice",
-      description:
-        "Wok-tossed rice with tender chicken, eggs and fresh vegetables.",
-      price: 159,
-      category: "lunch",
-      veg: false,
-      rating: 4.4,
-      image:
-        "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
-      prepTime: "12-15 min",
-    },
-    {
-      id: 7,
-      name: "Samosa",
-      description:
-        "Crispy pastry filled with spiced potato and peas, served hot and fresh.",
-      price: 49,
-      category: "snacks",
-      veg: true,
-      rating: 4.6,
-      image:
-        "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&h=300&fit=crop",
-      prepTime: "5-7 min",
-    },
-    {
-      id: 8,
-      name: "Gulab Jamun",
-      description:
-        "Soft milk dumplings soaked in delicious rose-flavored sugar syrup.",
-      price: 79,
-      category: "desserts",
-      veg: true,
-      rating: 4.9,
-      image:
-        "https://images.pexels.com/photos/37294501/pexels-photo-37294501.jpeg",
-      prepTime: "5-8 min",
-    },
-  ];
+  // Fetch menu items from backend
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/menu");
+      setMenuItems(response.data.items || []);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching menu:", err);
+      setError("Failed to load menu. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter items locally
+  useEffect(() => {
+    let filtered = [...menuItems];
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((item) => item.category === selectedCategory);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    setFilteredItems(filtered);
+  }, [menuItems, selectedCategory, searchTerm]);
 
   const categories = [
     { id: "all", label: "All Items", icon: "📋" },
@@ -123,23 +64,58 @@ export const Menu = () => {
     { id: "desserts", label: "Desserts", icon: "🍰" },
   ];
 
-  const filteredItems = menuItems.filter((item) => {
-    const matchesCategory =
-      selectedCategory === "all" || item.category === selectedCategory;
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const handleAddToCart = async (item) => {
+    if (!isAuthenticated) {
+      alert("Please login to add items to cart");
+      navigate("/login");
+      return;
+    }
 
-  const handleAddToCart = (item) => {
-    alert(`${item.name} added to cart!`);
+    setAddingId(item._id);
+    const result = await addToCart(item, 1);
+    setAddingId(null);
+
+    if (result.success) {
+      alert(`${item.name} added to cart!`);
+    } else {
+      alert(result.error);
+    }
   };
 
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedCategory("all");
   };
+
+  if (loading) {
+    return (
+      <main className="menu-page">
+        <div className="menu-container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading menu...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="menu-page">
+        <div className="menu-container">
+          <div className="error-state">
+            <div className="error-icon">😢</div>
+            <h3>Oops! Something went wrong</h3>
+            <p>{error}</p>
+            <button className="retry-btn" onClick={fetchMenuItems}>
+              Try Again
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="menu-page">
@@ -180,7 +156,9 @@ export const Menu = () => {
             {categories.map((category) => (
               <button
                 key={category.id}
-                className={`category-btn ${selectedCategory === category.id ? "active" : ""}`}
+                className={`category-btn ${
+                  selectedCategory === category.id ? "active" : ""
+                }`}
                 onClick={() => setSelectedCategory(category.id)}
               >
                 <span className="cat-icon">{category.icon}</span>
@@ -205,17 +183,19 @@ export const Menu = () => {
         {filteredItems.length > 0 ? (
           <div className="menu-grid">
             {filteredItems.map((item) => (
-              <article key={item.id} className="menu-card">
-                <NavLink to={`/menu/${item.id}`} className="menu-card-link">
+              <article key={item._id} className="menu-card">
+                <NavLink to={`/menu/${item._id}`} className="menu-card-link">
                   <div className="menu-card-image">
-                    {/* ✅ REAL IMAGE */}
                     <img
                       src={item.image}
                       alt={item.name}
                       className="food-image"
                       loading="lazy"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/400x300?text=Food";
+                      }}
                     />
-                    {/* Veg / Non Veg Badge */}
                     <div
                       className={
                         item.veg ? "food-type veg" : "food-type nonveg"
@@ -224,7 +204,6 @@ export const Menu = () => {
                       <span className="food-type-dot"></span>
                       {item.veg ? "VEG" : "NON-VEG"}
                     </div>
-                    {/* Rating Badge */}
                     <div className="rating-badge">⭐ {item.rating}</div>
                   </div>
 
@@ -244,8 +223,15 @@ export const Menu = () => {
                   <button
                     className="add-to-cart-btn"
                     onClick={() => handleAddToCart(item)}
+                    disabled={addingId === item._id}
                   >
-                    <span>+</span> Add to Cart
+                    {addingId === item._id ? (
+                      <>⏳ Adding...</>
+                    ) : (
+                      <>
+                        <span>+</span> Add to Cart
+                      </>
+                    )}
                   </button>
                 </div>
               </article>

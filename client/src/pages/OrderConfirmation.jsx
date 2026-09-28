@@ -7,7 +7,6 @@ export const OrderConfirmation = () => {
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
 
-  // Get order data from location state (or use dummy data)
   const orderData = location.state || {
     orderId: "ORD-2024-001",
     date: new Date().toLocaleString(),
@@ -17,21 +16,26 @@ export const OrderConfirmation = () => {
         name: "Crispy Veg Cheese Burger",
         quantity: 2,
         price: 199,
-        image: "🍔",
+        image:
+          "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
       },
-      { name: "French Fries", quantity: 1, price: 99, image: "🍟" },
+      {
+        name: "French Fries",
+        quantity: 1,
+        price: 99,
+        image:
+          "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400",
+      },
     ],
     deliveryAddress: "123 Campus Road, University City, Delhi - 110001",
     estimatedDelivery: "15-20 minutes",
     paymentMethod: "Card",
   };
 
-  // Trigger animation on mount
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Calculate subtotal
   const subtotal = orderData.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -39,7 +43,6 @@ export const OrderConfirmation = () => {
   const deliveryCharge = 40;
   const total = subtotal + deliveryCharge;
 
-  // FIXED: Track Order - Navigate to specific order tracking page
   const handleTrackOrder = () => {
     if (orderData && orderData.orderId) {
       navigate(`/order-tracking/${orderData.orderId}`);
@@ -58,7 +61,6 @@ export const OrderConfirmation = () => {
           </div>
         </div>
 
-        {/* Header */}
         <div className={`confirmation-header ${isVisible ? "show" : ""}`}>
           <h1 className="page-title">🎉 Order Placed Successfully!</h1>
           <p className="page-subtitle">
@@ -66,10 +68,9 @@ export const OrderConfirmation = () => {
           </p>
         </div>
 
-        {/* Order Details Card */}
         <div className={`confirmation-content ${isVisible ? "show" : ""}`}>
           <div className="confirmation-grid">
-            {/* Left Column - Order Info */}
+            {/* LEFT */}
             <div className="confirmation-left">
               <div className="order-details-card">
                 <h2 className="card-title">📋 Order Details</h2>
@@ -119,7 +120,14 @@ export const OrderConfirmation = () => {
                   {orderData.items.map((item, index) => (
                     <div key={index} className="summary-item">
                       <div className="summary-item-info">
-                        <span className="summary-item-image">{item.image}</span>
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="summary-item-image"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
                         <div>
                           <span className="summary-item-name">{item.name}</span>
                           <span className="summary-item-qty">
@@ -156,38 +164,31 @@ export const OrderConfirmation = () => {
               </div>
             </div>
 
-            {/* Right Column - Actions */}
+            {/* RIGHT */}
             <div className="confirmation-right">
               <div className="actions-card">
                 <h3 className="actions-title">What's Next?</h3>
 
                 <div className="actions-grid">
-                  {/* FIXED: Track Order button */}
+                  {/* Track Order Button */}
                   <button
                     className="action-btn primary"
                     onClick={handleTrackOrder}
                   >
                     <span className="action-icon">🚚</span>
-                    <div className="action-content">
-                      <span className="action-label">Track Order</span>
-                      <span className="action-desc">See real-time status</span>
-                    </div>
+                    <span className="action-label">Track Order</span>
                   </button>
 
+                  {/* Continue Shopping */}
                   <NavLink to="/menu" className="action-btn secondary">
                     <span className="action-icon">🍽️</span>
-                    <div className="action-content">
-                      <span className="action-label">Continue Shopping</span>
-                      <span className="action-desc">Browse more items</span>
-                    </div>
+                    <span className="action-label">Continue Shopping</span>
                   </NavLink>
 
+                  {/* View All Orders */}
                   <NavLink to="/orders" className="action-btn outline">
                     <span className="action-icon">📋</span>
-                    <div className="action-content">
-                      <span className="action-label">View All Orders</span>
-                      <span className="action-desc">Order history</span>
-                    </div>
+                    <span className="action-label">View All Orders</span>
                   </NavLink>
                 </div>
 
@@ -196,8 +197,6 @@ export const OrderConfirmation = () => {
                   <p>
                     A confirmation email has been sent to your registered email
                     address.
-                    <br />
-                    <small>Check your spam folder if you don't see it.</small>
                   </p>
                 </div>
               </div>

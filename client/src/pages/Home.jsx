@@ -1,52 +1,19 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import api from "../utils/api";
 import "../css/Home.css";
 
 const Home = () => {
-  const categories = [
-    { name: "Breakfast", icon: "🍳" },
-    { name: "Snacks", icon: "🍿" },
-    { name: "Fast Food", icon: "🍔" },
-    { name: "Main Course", icon: "🍛" },
-    { name: "Beverages", icon: "🥤" },
-    { name: "Desserts", icon: "🍰" },
-  ];
+  const [popularItems, setPopularItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const popularItems = [
-    {
-      name: "Crispy Veg Cheese Burger",
-      description: "Crunchy veggie patty with double cheddar, fresh lettuce...",
-      price: "₹199",
-      rating: "⭐ 4.5",
-      image:
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
-    },
-    {
-      name: "Paneer Tikka Pizza",
-      description: "Spicy marinated paneer cubes, onions, capsicum, and...",
-      price: "₹249",
-      rating: "⭐ 4.8",
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop",
-    },
-    {
-      name: "Special Masala Dosa",
-      description:
-        "Crispy cone filled with spiced potato curry. Served with...",
-      price: "₹129",
-      rating: "⭐ 4.7",
-      image:
-        "https://images.pexels.com/photos/39104603/pexels-photo-39104603.jpeg",
-    },
-    {
-      name: "Chicken Tikka Roll",
-      description:
-        "Tender pieces of spicy chicken tikka wrapped with onions and...",
-      price: "₹179",
-      rating: "⭐ 4.6",
-      image:
-        "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
-    },
+  const categories = [
+    { name: "Breakfast", icon: "🍳", slug: "breakfast" },
+    { name: "Snacks", icon: "🍿", slug: "snacks" },
+    { name: "Fast Food", icon: "🍔", slug: "snacks" },
+    { name: "Main Course", icon: "🍛", slug: "lunch" },
+    { name: "Beverages", icon: "🥤", slug: "beverages" },
+    { name: "Desserts", icon: "🍰", slug: "desserts" },
   ];
 
   const features = [
@@ -68,6 +35,23 @@ const Home = () => {
       description: "Get real-time updates on your order status.",
     },
   ];
+
+  // Fetch popular items
+  useEffect(() => {
+    fetchPopularItems();
+  }, []);
+
+  const fetchPopularItems = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/menu/popular?limit=4");
+      setPopularItems(response.data.items || []);
+    } catch (err) {
+      console.error("Error fetching popular items:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="home-page">
@@ -96,7 +80,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* WHAT ARE YOU CRAVING TODAY? */}
+      {/* CATEGORIES */}
       <section className="craving-section">
         <div className="container">
           <h2 className="section-title">What are you craving today?</h2>
@@ -136,28 +120,51 @@ const Home = () => {
             </span>
           </div>
 
-          <div className="popular-grid">
-            {popularItems.map((item, index) => (
-              <div key={index} className="popular-card">
-                <div className="popular-card-image">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="popular-food-image"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="popular-card-body">
-                  <h3 className="popular-item-name">{item.name}</h3>
-                  <p className="popular-item-description">{item.description}</p>
-                  <div className="popular-item-footer">
-                    <span className="popular-item-price">{item.price}</span>
-                    <span className="popular-item-rating">{item.rating}</span>
+          {loading ? (
+            <div className="home-loading">
+              <div className="spinner"></div>
+              <p>Loading popular items...</p>
+            </div>
+          ) : popularItems.length > 0 ? (
+            <div className="popular-grid">
+              {popularItems.map((item) => (
+                <Link
+                  to={`/menu/${item._id}`}
+                  key={item._id}
+                  className="popular-card"
+                >
+                  <div className="popular-card-image">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="popular-food-image"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/400x300?text=Food";
+                      }}
+                    />
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                  <div className="popular-card-body">
+                    <h3 className="popular-item-name">{item.name}</h3>
+                    <p className="popular-item-description">
+                      {item.description}
+                    </p>
+                    <div className="popular-item-footer">
+                      <span className="popular-item-price">₹{item.price}</span>
+                      <span className="popular-item-rating">
+                        ⭐ {item.rating}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="home-empty">
+              <p>No popular items yet.</p>
+            </div>
+          )}
 
           <div className="text-center mt-4">
             <Link to="/menu" className="btn btn-primary">
@@ -167,7 +174,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* WHY USE MEALMATE? */}
+      {/* WHY USE MEALMATE */}
       <section className="features-section">
         <div className="container">
           <h2 className="section-title">Why Use MealMate?</h2>

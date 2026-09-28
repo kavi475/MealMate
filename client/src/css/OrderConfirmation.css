@@ -304,63 +304,97 @@
   top: 100px;
 }
 
+/* ACTIONS CARD*/
+
 .actions-card {
   background: white;
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .actions-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #1f2937;
   margin: 0 0 16px 0;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 2px solid #f3f4f6;
 }
 
 .actions-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
 }
 
+/* ACTION BUTTON */
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 10px 14px;
   border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 10px;
   text-decoration: none;
-  transition: all 0.3s ease;
-  cursor: pointer;
   background: white;
   width: 100%;
-  text-align: left;
+  min-width: 100%;
+  max-width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
 }
 
 .action-btn:hover {
-  transform: translateX(4px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
 }
 
+/* ICON */
+.action-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* LABEL */
+.action-label {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: left;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* PRIMARY */
 .action-btn.primary {
-  background: #f97316;
+  background: linear-gradient(135deg, #f97316, #ea580c);
   border-color: #f97316;
+}
+
+.action-btn.primary .action-label {
   color: white;
 }
 
 .action-btn.primary:hover {
-  background: #ea580c;
+  background: linear-gradient(135deg, #ea580c, #c2410c);
   border-color: #ea580c;
-  box-shadow: 0 8px 16px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 8px 16px rgba(249, 115, 22, 0.25);
 }
 
+/* SECONDARY */
 .action-btn.secondary {
   border-color: #e5e7eb;
-  color: #1f2937;
 }
 
 .action-btn.secondary:hover {
@@ -368,9 +402,13 @@
   background: #fff7ed;
 }
 
+.action-btn.secondary:hover .action-label {
+  color: #f97316;
+}
+
+/* OUTLINE */
 .action-btn.outline {
   border-color: #e5e7eb;
-  color: #1f2937;
 }
 
 .action-btn.outline:hover {
@@ -378,46 +416,20 @@
   background: #f9fafb;
 }
 
-.action-icon {
-  font-size: 1.8rem;
-  flex-shrink: 0;
-}
-
-.action-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.action-label {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.action-btn.primary .action-label {
-  color: white;
-}
-
-.action-desc {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.action-btn.primary .action-desc {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Email Notice */
+/* EMAIL NOTICE */
 .email-notice {
   display: flex;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
   background: #f9fafb;
-  border-radius: 12px;
+  border-radius: 10px;
   align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .email-icon {
-  font-size: 1.3rem;
+  font-size: 1rem;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -425,14 +437,28 @@
 .email-notice p {
   margin: 0;
   color: #4b5563;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
-.email-notice small {
-  color: #9ca3af;
-}
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .actions-card {
+    padding: 14px;
+  }
 
+  .action-btn {
+    padding: 8px 12px;
+  }
+
+  .action-label {
+    font-size: 0.8rem;
+  }
+
+  .email-notice p {
+    font-size: 0.75rem;
+  }
+}
 /* RESPONSIVE - TABLET */
 
 @media (max-width: 992px) {
@@ -605,4 +631,23 @@
   .container {
     padding: 0 12px;
   }
+}
+
+.summary-item-image {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.summary-item-emoji {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
 }

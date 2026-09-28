@@ -1,75 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 import "../css/Profile.css";
 
 export const Profile = () => {
   const navigate = useNavigate();
-
-  //  Static User Data
-  const [user, setUser] = useState({
-    name: "John Doe",
-    email: "john.doe@university.edu",
-    phone: "+91 98765 43210",
-    joinDate: "January 2024",
-    avatar: "👨‍🎓",
-    address: {
-      street: "123 Campus Road",
-      city: "University City",
-      pincode: "110001",
-    },
-    stats: {
-      orders: 24,
-      totalSpent: 8497,
-      favorites: 6,
-    },
-  });
-
-  // Edit mode
+  const { user: authUser, logout } = useAuth();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ ...user });
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // Order history (static)
-  const recentOrders = [
-    {
-      id: "ORD-2024-004",
-      date: "Jan 17, 2024",
-      total: 416,
-      status: "confirmed",
-    },
-    {
-      id: "ORD-2024-002",
-      date: "Jan 16, 2024",
-      total: 427,
-      status: "preparing",
-    },
-    {
-      id: "ORD-2024-001",
-      date: "Jan 15, 2024",
-      total: 497,
-      status: "delivered",
-    },
-    {
-      id: "ORD-2024-003",
-      date: "Jan 14, 2024",
-      total: 326,
-      status: "cancelled",
-    },
-  ];
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
-  // ✅ Handle Edit
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/users/profile");
+      setUser(response.data);
+      setEditData(response.data);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      setError(err.response?.data?.error || "Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
     setEditData({ ...user });
   };
 
-  const handleSave = () => {
-    setUser({ ...editData });
-    setIsEditing(false);
-  };
-
   const handleCancel = () => {
     setIsEditing(false);
     setEditData({ ...user });
+    setError("");
   };
 
   const handleChange = (e) => {
@@ -79,7 +52,7 @@ export const Profile = () => {
       setEditData({
         ...editData,
         [parent]: {
-          ...editData[parent],
+          ...(editData[parent] || {}),
           [child]: value,
         },
       });
@@ -91,31 +64,66 @@ export const Profile = () => {
     }
   };
 
-  //  Logout Function
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await api.put("/users/profile", {
+        name: editData.name,
+        phone: editData.phone,
+        address: editData.address || {},
+      });
+      setUser(response.data);
+      setIsEditing(false);
+      setSuccessMessage("Profile updated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setError(err.response?.data?.error || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      // Clear any auth data here
+      logout();
       navigate("/");
     }
   };
 
-  // Status color
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: "#f59e0b",
-      confirmed: "#3b82f6",
-      preparing: "#8b5cf6",
-      ready: "#06b6d4",
-      delivered: "#10b981",
-      cancelled: "#ef4444",
-    };
-    return colors[status] || "#6b7280";
-  };
+  if (loading) {
+    return (
+      <div className="profile-page">
+        <div className="container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !user) {
+    return (
+      <div className="profile-page">
+        <div className="container">
+          <div className="error-state">
+            <div className="error-icon">😢</div>
+            <h3>Failed to load profile</h3>
+            <p>{error}</p>
+            <button className="btn btn-primary" onClick={fetchProfile}>
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
       <div className="container">
-        {/* Page Header */}
         <div className="profile-header">
           <h1 className="page-title">My Profile</h1>
           <p className="page-subtitle">
@@ -123,35 +131,29 @@ export const Profile = () => {
           </p>
         </div>
 
+        {successMessage && (
+          <div className="success-banner">✅ {successMessage}</div>
+        )}
+
         <div className="profile-content">
-          {/* Left Column - Profile Info */}
+          {/* Left Column */}
           <div className="profile-left">
             <div className="profile-card">
               {/* Avatar Section */}
               <div className="profile-avatar-section">
-                <div className="profile-avatar">{user.avatar}</div>
+                <div className="profile-avatar">
+                  {user.name?.charAt(0).toUpperCase() || "U"}
+                </div>
                 <div className="profile-name-section">
                   <h2 className="profile-name">{user.name}</h2>
                   <p className="profile-email">{user.email}</p>
-                  <p className="profile-join">Member since {user.joinDate}</p>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="profile-stats">
-                <div className="stat-item">
-                  <span className="stat-number">{user.stats.orders}</span>
-                  <span className="stat-label">Orders</span>
-                </div>
-                <div className="stat-divider"></div>
-                <div className="stat-item">
-                  <span className="stat-number">₹{user.stats.totalSpent}</span>
-                  <span className="stat-label">Total Spent</span>
-                </div>
-                <div className="stat-divider"></div>
-                <div className="stat-item">
-                  <span className="stat-number">{user.stats.favorites}</span>
-                  <span className="stat-label">Favorites</span>
+                  <p className="profile-join">
+                    Member since{" "}
+                    {new Date(user.createdAt).toLocaleDateString("en-IN", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
                 </div>
               </div>
 
@@ -163,7 +165,9 @@ export const Profile = () => {
                       <span className="detail-icon">📱</span>
                       <div>
                         <span className="detail-label">Phone</span>
-                        <span className="detail-value">{user.phone}</span>
+                        <span className="detail-value">
+                          {user.phone || "Not set"}
+                        </span>
                       </div>
                     </div>
                     <div className="detail-item">
@@ -171,14 +175,23 @@ export const Profile = () => {
                       <div>
                         <span className="detail-label">Address</span>
                         <span className="detail-value">
-                          {user.address.street}, {user.address.city},{" "}
-                          {user.address.pincode}
+                          {user.address?.street
+                            ? `${user.address.street}, ${user.address.city || ""}, ${user.address.pincode || ""}`
+                            : "Not set"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-icon">👤</span>
+                      <div>
+                        <span className="detail-label">Role</span>
+                        <span className="detail-value">
+                          {user.role === "admin" ? "👑 Admin" : "👤 User"}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="profile-actions">
                     <button
                       className="btn btn-primary btn-block"
@@ -206,6 +219,8 @@ export const Profile = () => {
                   <div className="profile-edit">
                     <h3 className="edit-title">Edit Profile</h3>
 
+                    {error && <div className="error-message">{error}</div>}
+
                     <div className="edit-form">
                       <div className="form-group">
                         <label className="form-label">Full Name</label>
@@ -213,7 +228,7 @@ export const Profile = () => {
                           type="text"
                           name="name"
                           className="form-input"
-                          value={editData.name}
+                          value={editData.name || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -222,10 +237,8 @@ export const Profile = () => {
                         <label className="form-label">Email</label>
                         <input
                           type="email"
-                          name="email"
                           className="form-input"
-                          value={editData.email}
-                          onChange={handleChange}
+                          value={editData.email || ""}
                           disabled
                         />
                         <span className="form-hint">
@@ -239,7 +252,7 @@ export const Profile = () => {
                           type="tel"
                           name="phone"
                           className="form-input"
-                          value={editData.phone}
+                          value={editData.phone || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -250,7 +263,7 @@ export const Profile = () => {
                           type="text"
                           name="address.street"
                           className="form-input"
-                          value={editData.address.street}
+                          value={editData.address?.street || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -262,7 +275,7 @@ export const Profile = () => {
                             type="text"
                             name="address.city"
                             className="form-input"
-                            value={editData.address.city}
+                            value={editData.address?.city || ""}
                             onChange={handleChange}
                           />
                         </div>
@@ -272,7 +285,7 @@ export const Profile = () => {
                             type="text"
                             name="address.pincode"
                             className="form-input"
-                            value={editData.address.pincode}
+                            value={editData.address?.pincode || ""}
                             onChange={handleChange}
                           />
                         </div>
@@ -282,12 +295,21 @@ export const Profile = () => {
                         <button
                           className="btn btn-primary"
                           onClick={handleSave}
+                          disabled={saving}
                         >
-                          💾 Save Changes
+                          {saving ? (
+                            <>
+                              <span className="spinner-small"></span>
+                              Saving...
+                            </>
+                          ) : (
+                            "💾 Save Changes"
+                          )}
                         </button>
                         <button
                           className="btn btn-secondary"
                           onClick={handleCancel}
+                          disabled={saving}
                         >
                           Cancel
                         </button>
@@ -299,46 +321,8 @@ export const Profile = () => {
             </div>
           </div>
 
-          {/* Right Column - Recent Orders */}
+          {/* Right Column */}
           <div className="profile-right">
-            <div className="recent-orders-card">
-              <div className="recent-orders-header">
-                <h3 className="recent-orders-title">📦 Recent Orders</h3>
-                <NavLink to="/orders" className="view-all-link">
-                  View All →
-                </NavLink>
-              </div>
-
-              <div className="recent-orders-list">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="recent-order-item">
-                    <div className="recent-order-info">
-                      <span className="recent-order-id">{order.id}</span>
-                      <span className="recent-order-date">{order.date}</span>
-                    </div>
-                    <div className="recent-order-details">
-                      <span className="recent-order-total">₹{order.total}</span>
-                      <span
-                        className="recent-order-status"
-                        style={{ color: getStatusColor(order.status) }}
-                      >
-                        ●{" "}
-                        {order.status.charAt(0).toUpperCase() +
-                          order.status.slice(1)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="recent-orders-footer">
-                <NavLink to="/orders" className="btn btn-secondary btn-block">
-                  View All Orders
-                </NavLink>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
             <div className="quick-actions-card">
               <h3 className="quick-actions-title">⚡ Quick Actions</h3>
               <div className="quick-actions-grid">

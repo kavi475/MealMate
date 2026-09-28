@@ -1,9 +1,13 @@
+
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "../css/Auth.css";
 
 export const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,14 +20,11 @@ export const Register = () => {
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validation
@@ -49,11 +50,20 @@ export const Register = () => {
 
     setLoading(true);
 
-    // Simulate registration
-    setTimeout(() => {
-      setLoading(false);
+    const result = await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      phone: formData.phone,
+    });
+
+    setLoading(false);
+
+    if (result.success) {
       navigate("/");
-    }, 1500);
+    } else {
+      setError(result.error);
+    }
   };
 
   return (

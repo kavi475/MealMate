@@ -1,72 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../utils/api";
 import "../css/AdminUsers.css";
 
 export const AdminUsers = () => {
+  const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState({ total: 0, admins: 0, users: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Rahul Sharma",
-      email: "rahul@university.edu",
-      phone: "+91 98765 43210",
-      role: "user",
-      orders: 24,
-      joined: "Jan 2024",
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Priya Patel",
-      email: "priya@university.edu",
-      phone: "+91 98765 43211",
-      role: "user",
-      orders: 18,
-      joined: "Jan 2024",
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Amit Kumar",
-      email: "amit@university.edu",
-      phone: "+91 98765 43212",
-      role: "admin",
-      orders: 5,
-      joined: "Dec 2023",
-      status: "active",
-    },
-    {
-      id: 4,
-      name: "Sneha Reddy",
-      email: "sneha@university.edu",
-      phone: "+91 98765 43213",
-      role: "user",
-      orders: 32,
-      joined: "Nov 2023",
-      status: "active",
-    },
-    {
-      id: 5,
-      name: "Vikram Singh",
-      email: "vikram@university.edu",
-      phone: "+91 98765 43214",
-      role: "user",
-      orders: 12,
-      joined: "Jan 2024",
-      status: "inactive",
-    },
-    {
-      id: 6,
-      name: "Anjali Verma",
-      email: "anjali@university.edu",
-      phone: "+91 98765 43215",
-      role: "user",
-      orders: 8,
-      joined: "Jan 2024",
-      status: "active",
-    },
-  ]);
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/users/admin/all");
+      setUsers(response.data.users || []);
+      setStats(response.data.stats || { total: 0, admins: 0, users: 0 });
+      setError("");
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      setError(err.response?.data?.error || "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      await api.delete(`/users/admin/${id}`);
+      alert("User deleted successfully!");
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to delete user");
+    }
+  };
 
   const filteredUsers = users.filter((u) => {
     const matchesRole = filterRole === "all" || u.role === filterRole;
@@ -76,21 +49,26 @@ export const AdminUsers = () => {
     return matchesRole && matchesSearch;
   });
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      setUsers(users.filter((u) => u.id !== id));
-    }
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
-  const handleToggleStatus = (id) => {
-    setUsers(
-      users.map((u) =>
-        u.id === id
-          ? { ...u, status: u.status === "active" ? "inactive" : "active" }
-          : u,
-      ),
+  if (loading) {
+    return (
+      <div className="admin-users-page">
+        <div className="admin-container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading users...</p>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }
 
   return (
     <div className="admin-users-page">
@@ -102,33 +80,28 @@ export const AdminUsers = () => {
               View and manage all registered users
             </p>
           </div>
+          <button className="btn btn-secondary" onClick={fetchUsers}>
+            🔄 Refresh
+          </button>
         </div>
 
+        {/* Stats */}
         <div className="user-stats">
           <div className="user-stat">
-            <span className="us-value">{users.length}</span>
+            <span className="us-value">{stats.total}</span>
             <span className="us-label">Total Users</span>
           </div>
           <div className="user-stat">
-            <span className="us-value">
-              {users.filter((u) => u.status === "active").length}
-            </span>
-            <span className="us-label">Active</span>
+            <span className="us-value">{stats.users}</span>
+            <span className="us-label">Customers</span>
           </div>
           <div className="user-stat">
-            <span className="us-value">
-              {users.filter((u) => u.role === "admin").length}
-            </span>
+            <span className="us-value">{stats.admins}</span>
             <span className="us-label">Admins</span>
-          </div>
-          <div className="user-stat">
-            <span className="us-value">
-              {users.reduce((s, u) => s + u.orders, 0)}
-            </span>
-            <span className="us-label">Total Orders</span>
           </div>
         </div>
 
+        {/* Controls */}
         <div className="user-controls">
           <div className="search-box">
             <span className="search-icon">🔍</span>
@@ -162,6 +135,9 @@ export const AdminUsers = () => {
           </div>
         </div>
 
+        {error && <div className="error-banner">{error}</div>}
+
+        {/* Table */}
         <div className="table-card">
           <div className="table-wrapper">
             <table className="data-table">
@@ -170,18 +146,18 @@ export const AdminUsers = () => {
                   <th>User</th>
                   <th>Contact</th>
                   <th>Role</th>
-                  <th>Orders</th>
                   <th>Joined</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user._id}>
                     <td>
                       <div className="user-cell">
-                        <div className="user-avatar">{user.name.charAt(0)}</div>
+                        <div className="user-avatar">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
                         <span className="user-name">{user.name}</span>
                       </div>
                     </td>
@@ -197,28 +173,16 @@ export const AdminUsers = () => {
                       </span>
                     </td>
                     <td>
-                      <span className="orders-count">{user.orders}</span>
-                    </td>
-                    <td>
-                      <span className="joined-date">{user.joined}</span>
-                    </td>
-                    <td>
-                      <button
-                        className={`status-badge ${user.status}`}
-                        onClick={() => handleToggleStatus(user.id)}
-                      >
-                        {user.status === "active" ? "● Active" : "● Inactive"}
-                      </button>
+                      <span className="joined-date">
+                        {formatDate(user.createdAt)}
+                      </span>
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <button className="action-btn view" title="View">
-                          👁️
-                        </button>
                         <button
                           className="action-btn delete"
-                          onClick={() => handleDelete(user.id)}
-                          title="Delete"
+                          onClick={() => handleDelete(user._id, user.name)}
+                          title="Delete user"
                         >
                           🗑️
                         </button>
@@ -229,11 +193,16 @@ export const AdminUsers = () => {
               </tbody>
             </table>
           </div>
+
           {filteredUsers.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">👥</div>
               <h3>No users found</h3>
-              <p>Try adjusting your search or filter</p>
+              <p>
+                {users.length === 0
+                  ? "No users have registered yet."
+                  : "Try adjusting your search or filter"}
+              </p>
             </div>
           )}
         </div>

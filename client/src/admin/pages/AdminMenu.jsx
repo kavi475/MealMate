@@ -1,103 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../../utils/api";
 import "../css/AdminMenu.css";
 
 export const AdminMenu = () => {
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [menuItems, setMenuItems] = useState([
-    {
-      id: 1,
-      name: "Crispy Veg Cheese Burger",
-      category: "snacks",
-      price: 199,
-      veg: true,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=100&h=100&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Paneer Tikka Pizza",
-      category: "lunch",
-      price: 249,
-      veg: true,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=100&h=100&fit=crop",
-    },
-    {
-      id: 3,
-      name: "Special Masala Dosa",
-      category: "breakfast",
-      price: 129,
-      veg: true,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1630384060421-c4e0e5d63e7d?w=100&h=100&fit=crop",
-    },
-    {
-      id: 4,
-      name: "Chicken Tikka Roll",
-      category: "snacks",
-      price: 179,
-      veg: false,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=100&h=100&fit=crop",
-    },
-    {
-      id: 5,
-      name: "Cold Coffee",
-      category: "beverages",
-      price: 89,
-      veg: true,
-      available: false,
-      image:
-        "https://images.unsplash.com/photo-1517701604599-bb29b880090f?w=100&h=100&fit=crop",
-    },
-    {
-      id: 6,
-      name: "Chicken Fried Rice",
-      category: "lunch",
-      price: 159,
-      veg: false,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=100&h=100&fit=crop",
-    },
-    {
-      id: 7,
-      name: "Samosa",
-      category: "snacks",
-      price: 49,
-      veg: true,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=100&h=100&fit=crop",
-    },
-    {
-      id: 8,
-      name: "Gulab Jamun",
-      category: "desserts",
-      price: 79,
-      veg: true,
-      available: true,
-      image:
-        "https://images.unsplash.com/photo-1589119908998-c0aa86d9b7b4?w=100&h=100&fit=crop",
-    },
-  ]);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "snacks",
+    veg: true,
+    image: "",
+    prepTime: "10-15 min",
+    calories: "300 kcal",
+  });
 
-  const categories = [
-    "all",
-    "breakfast",
-    "lunch",
-    "snacks",
-    "beverages",
-    "desserts",
-  ];
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/menu");
+      setMenuItems(response.data.items || []);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching menu:", err);
+      setError("Failed to load menu items");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
 
   const filteredItems = menuItems.filter((item) => {
     const matchesCategory =
@@ -108,28 +50,120 @@ export const AdminMenu = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
-      setMenuItems(menuItems.filter((item) => item.id !== id));
-    }
-  };
-
-  const handleToggleAvailability = (id) => {
-    setMenuItems(
-      menuItems.map((item) =>
-        item.id === id ? { ...item, available: !item.available } : item,
-      ),
-    );
+  const handleAddNew = () => {
+    setEditingItem(null);
+    setFormData({
+      name: "",
+      description: "",
+      price: "",
+      category: "snacks",
+      veg: true,
+      image: "",
+      prepTime: "10-15 min",
+      calories: "300 kcal",
+    });
+    setShowModal(true);
   };
 
   const handleEdit = (item) => {
     setEditingItem(item);
+    setFormData({
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      veg: item.veg,
+      image: item.image,
+      prepTime: item.prepTime || "10-15 min",
+      calories: item.calories || "300 kcal",
+    });
     setShowModal(true);
   };
-  const handleAddNew = () => {
-    setEditingItem(null);
-    setShowModal(true);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (
+      !formData.name ||
+      !formData.description ||
+      !formData.price ||
+      !formData.image
+    ) {
+      alert(
+        "Please fill in all required fields (name, description, price, image)",
+      );
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const payload = {
+        ...formData,
+        price: Number(formData.price),
+      };
+
+      if (editingItem) {
+        await api.put(`/menu/${editingItem._id}`, payload);
+        alert("Item updated successfully!");
+      } else {
+        await api.post("/menu", payload);
+        alert("Item added successfully!");
+      }
+
+      setShowModal(false);
+      fetchMenuItems();
+    } catch (err) {
+      console.error("Error saving item:", err);
+      alert(err.response?.data?.error || "Failed to save item");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      await api.delete(`/menu/${id}`);
+      alert("Item deleted successfully!");
+      fetchMenuItems();
+    } catch (err) {
+      console.error("Error deleting item:", err);
+      alert("Failed to delete item");
+    }
+  };
+
+  const handleToggleAvailability = async (id) => {
+    try {
+      await api.put(`/menu/${id}/toggle`);
+      fetchMenuItems();
+    } catch (err) {
+      console.error("Error toggling availability:", err);
+      alert("Failed to update availability");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="admin-menu-page">
+        <div className="admin-container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading menu items...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-menu-page">
@@ -144,6 +178,15 @@ export const AdminMenu = () => {
           </button>
         </div>
 
+        {error && (
+          <div className="error-banner">
+            {error}
+            <button onClick={fetchMenuItems} className="retry-btn">
+              Retry
+            </button>
+          </div>
+        )}
+
         <div className="menu-controls">
           <div className="search-box">
             <span className="search-icon">🔍</span>
@@ -156,7 +199,14 @@ export const AdminMenu = () => {
             />
           </div>
           <div className="category-filters">
-            {categories.map((cat) => (
+            {[
+              "all",
+              "breakfast",
+              "lunch",
+              "snacks",
+              "beverages",
+              "desserts",
+            ].map((cat) => (
               <button
                 key={cat}
                 className={`category-btn ${selectedCategory === cat ? "active" : ""}`}
@@ -175,13 +225,13 @@ export const AdminMenu = () => {
           </div>
           <div className="mini-stat">
             <span className="mini-stat-value">
-              {menuItems.filter((i) => i.available).length}
+              {menuItems.filter((i) => i.isAvailable).length}
             </span>
             <span className="mini-stat-label">Available</span>
           </div>
           <div className="mini-stat">
             <span className="mini-stat-value">
-              {menuItems.filter((i) => !i.available).length}
+              {menuItems.filter((i) => !i.isAvailable).length}
             </span>
             <span className="mini-stat-label">Out of Stock</span>
           </div>
@@ -208,7 +258,7 @@ export const AdminMenu = () => {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item._id}>
                     <td>
                       <div className="item-cell">
                         <img
@@ -232,10 +282,10 @@ export const AdminMenu = () => {
                     <td className="price-cell">₹{item.price}</td>
                     <td>
                       <button
-                        className={`status-toggle ${item.available ? "available" : "unavailable"}`}
-                        onClick={() => handleToggleAvailability(item.id)}
+                        className={`status-toggle ${item.isAvailable ? "available" : "unavailable"}`}
+                        onClick={() => handleToggleAvailability(item._id)}
                       >
-                        {item.available ? "✓ Available" : "✕ Out of Stock"}
+                        {item.isAvailable ? "✓ Available" : "✕ Out of Stock"}
                       </button>
                     </td>
                     <td>
@@ -249,7 +299,7 @@ export const AdminMenu = () => {
                         </button>
                         <button
                           className="action-btn delete"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDelete(item._id, item.name)}
                           title="Delete"
                         >
                           🗑️
@@ -270,6 +320,7 @@ export const AdminMenu = () => {
           )}
         </div>
 
+        {/* MODAL */}
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -282,84 +333,169 @@ export const AdminMenu = () => {
                   ✕
                 </button>
               </div>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Item Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    defaultValue={editingItem?.name || ""}
-                    placeholder="Enter item name"
-                  />
-                </div>
-                <div className="form-row">
+
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
                   <div className="form-group">
-                    <label>Price (₹)</label>
+                    <label>Item Name *</label>
                     <input
-                      type="number"
+                      type="text"
+                      name="name"
                       className="form-input"
-                      defaultValue={editingItem?.price || ""}
-                      placeholder="0"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="e.g., Crispy Veg Burger"
+                      required
                     />
                   </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Price (₹) *</label>
+                      <input
+                        type="number"
+                        name="price"
+                        className="form-input"
+                        value={formData.price}
+                        onChange={handleChange}
+                        placeholder="199"
+                        required
+                        min="1"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Category *</label>
+                      <select
+                        name="category"
+                        className="form-input"
+                        value={formData.category}
+                        onChange={handleChange}
+                      >
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="snacks">Snacks</option>
+                        <option value="beverages">Beverages</option>
+                        <option value="desserts">Desserts</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="form-group">
-                    <label>Category</label>
-                    <select
+                    <label>Description *</label>
+                    <textarea
+                      name="description"
                       className="form-input"
-                      defaultValue={editingItem?.category || "snacks"}
-                    >
-                      <option value="breakfast">Breakfast</option>
-                      <option value="lunch">Lunch</option>
-                      <option value="snacks">Snacks</option>
-                      <option value="beverages">Beverages</option>
-                      <option value="desserts">Desserts</option>
-                    </select>
+                      rows="3"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Enter item description"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Image URL *</label>
+                    <input
+                      type="url"
+                      name="image"
+                      className="form-input"
+                      value={formData.image}
+                      onChange={handleChange}
+                      placeholder="https://images.unsplash.com/..."
+                      required
+                    />
+                    {formData.image && (
+                      <div className="image-preview">
+                        <img
+                          src={formData.image}
+                          alt="Preview"
+                          onError={(e) => (e.target.style.display = "none")}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Prep Time</label>
+                      <input
+                        type="text"
+                        name="prepTime"
+                        className="form-input"
+                        value={formData.prepTime}
+                        onChange={handleChange}
+                        placeholder="10-15 min"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Calories</label>
+                      <input
+                        type="text"
+                        name="calories"
+                        className="form-input"
+                        value={formData.calories}
+                        onChange={handleChange}
+                        placeholder="300 kcal"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Food Type</label>
+                    <div className="radio-group">
+                      <label className="radio-label">
+                        <input
+                          type="radio"
+                          name="veg"
+                          checked={formData.veg === true}
+                          onChange={() =>
+                            setFormData({ ...formData, veg: true })
+                          }
+                        />
+                        🌱 Veg
+                      </label>
+                      <label className="radio-label">
+                        <input
+                          type="radio"
+                          name="veg"
+                          checked={formData.veg === false}
+                          onChange={() =>
+                            setFormData({ ...formData, veg: false })
+                          }
+                        />
+                        🍖 Non-Veg
+                      </label>
+                    </div>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    className="form-input"
-                    rows="3"
-                    placeholder="Enter item description"
-                  ></textarea>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="spinner-small"></span>
+                        {editingItem ? "Updating..." : "Adding..."}
+                      </>
+                    ) : editingItem ? (
+                      "💾 Update"
+                    ) : (
+                      "➕ Add Item"
+                    )}
+                  </button>
                 </div>
-                <div className="form-group">
-                  <label>Food Type</label>
-                  <div className="radio-group">
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="type"
-                        defaultChecked={editingItem?.veg !== false}
-                      />{" "}
-                      🌱 Veg
-                    </label>
-                    <label className="radio-label">
-                      <input
-                        type="radio"
-                        name="type"
-                        defaultChecked={editingItem?.veg === false}
-                      />{" "}
-                      🍖 Non-Veg
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setShowModal(false)}
-                >
-                  {editingItem ? "💾 Update" : "➕ Add Item"}
-                </button>
-              </div>
+              </form>
             </div>
           </div>
         )}

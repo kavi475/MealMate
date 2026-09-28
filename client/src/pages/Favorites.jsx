@@ -1,38 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import api from "../utils/api";
+import { useCart } from "../context/CartContext";
 import "../css/Favorites.css";
 
 export const Favorites = () => {
-  const [favorites, setFavorites] = useState([
-    {
-      id: 1,
-      name: "Crispy Veg Cheese Burger",
-      price: 199,
-      image: "🍔",
-      rating: 4.5,
-      veg: true,
-    },
-    {
-      id: 3,
-      name: "Special Masala Dosa",
-      price: 129,
-      image: "🥞",
-      rating: 4.7,
-      veg: true,
-    },
-    {
-      id: 8,
-      name: "Gulab Jamun",
-      price: 79,
-      image: "🍡",
-      rating: 4.9,
-      veg: true,
-    },
-  ]);
+  const { addToCart } = useCart();
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [processingId, setProcessingId] = useState(null);
 
-  const removeFavorite = (id) => {
-    setFavorites((prev) => prev.filter((item) => item.id !== id));
+  const fetchFavorites = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/favorites");
+      setFavorites(response.data.items || []);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching favorites:", err);
+      setError(err.response?.data?.error || "Failed to load favorites");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const removeFavorite = async (id) => {
+    if (!window.confirm("Remove from favorites?")) return;
+
+    setProcessingId(id);
+    try {
+      await api.delete(`/favorites/${id}`);
+      setFavorites((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to remove favorite");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleAddToCart = async (item) => {
+    setProcessingId(item._id);
+    const result = await addToCart(item, 1);
+    setProcessingId(null);
+
+    if (result.success) {
+      alert(`${item.name} added to cart!`);
+    } else {
+      alert(result.error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="favorites-page">
+        <div className="container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading favorites...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="favorites-page">
@@ -46,20 +80,32 @@ export const Favorites = () => {
           </p>
         </div>
 
+        {error && <div className="error-banner">{error}</div>}
+
         {favorites.length > 0 ? (
           <div className="favorites-grid">
             {favorites.map((item) => (
-              <div key={item.id} className="favorite-card">
+              <div key={item._id} className="favorite-card">
                 <div className="favorite-card-image">
-                  <span className="food-emoji">{item.image}</span>
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="favorite-image"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
                   {item.veg && <span className="veg-badge">🌱</span>}
                   <button
                     className="remove-favorite-btn"
-                    onClick={() => removeFavorite(item.id)}
+                    onClick={() => removeFavorite(item._id)}
+                    disabled={processingId === item._id}
+                    title="Remove from favorites"
                   >
-                    ✕
+                    {processingId === item._id ? "⏳" : "✕"}
                   </button>
                 </div>
+
                 <div className="favorite-card-body">
                   <h3 className="favorite-item-name">{item.name}</h3>
                   <div className="favorite-item-meta">
@@ -70,13 +116,17 @@ export const Favorites = () => {
                   </div>
                   <div className="favorite-item-actions">
                     <NavLink
-                      to={`/menu/${item.id}`}
+                      to={`/menu/${item._id}`}
                       className="btn btn-primary btn-sm"
                     >
                       View Item
                     </NavLink>
-                    <button className="btn btn-secondary btn-sm">
-                      Add to Cart
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleAddToCart(item)}
+                      disabled={processingId === item._id}
+                    >
+                      {processingId === item._id ? "Adding..." : "Add to Cart"}
                     </button>
                   </div>
                 </div>

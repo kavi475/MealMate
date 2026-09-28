@@ -1,37 +1,18 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import api from "../utils/api";
+import { useCart } from "../context/CartContext";
 import "../css/Checkout.css";
 
 export const Checkout = () => {
   const navigate = useNavigate();
+  const { cartItems, subtotal, deliveryCharge, total, clearCart } = useCart();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Cart items from previous page - in real app
-  const cartItems = [
-    {
-      id: 1,
-      name: "Crispy Veg Cheese Burger",
-      price: 199,
-      quantity: 2,
-      image: "🍔",
-    },
-    { id: 2, name: "Paneer Tikka Pizza", price: 249, quantity: 1, image: "🍕" },
-    { id: 4, name: "Chicken Tikka Roll", price: 179, quantity: 3, image: "🌯" },
-  ];
-
-  // Calculate totals
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-  const deliveryCharge = 40;
-  const total = subtotal + deliveryCharge;
-
-  // Form state
   const [formData, setFormData] = useState({
     fullName: "John Doe",
-    email: "john.doe@university.edu",
+    email: "john@university.edu",
     phone: "+91 98765 43210",
     address: {
       street: "123 Campus Road",
@@ -45,7 +26,6 @@ export const Checkout = () => {
     saveAddress: false,
   });
 
-  // Saved addresses
   const [savedAddresses] = useState([
     {
       id: 1,
@@ -67,7 +47,6 @@ export const Checkout = () => {
 
   const [selectedAddress, setSelectedAddress] = useState(null);
 
-  // Payment methods
   const paymentMethods = [
     { id: "card", label: "Credit/Debit Card", icon: "💳" },
     { id: "upi", label: "UPI", icon: "📱" },
@@ -75,17 +54,13 @@ export const Checkout = () => {
     { id: "cod", label: "Cash on Delivery", icon: "💰" },
   ];
 
-  // Handle form input
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name.includes(".")) {
       const [parent, child] = name.split(".");
       setFormData({
         ...formData,
-        [parent]: {
-          ...formData[parent],
-          [child]: value,
-        },
+        [parent]: { ...formData[parent], [child]: value },
       });
     } else {
       setFormData({
@@ -95,7 +70,6 @@ export const Checkout = () => {
     }
   };
 
-  // Handle address selection
   const handleAddressSelect = (address) => {
     setSelectedAddress(address.id);
     setFormData({
@@ -110,11 +84,15 @@ export const Checkout = () => {
     });
   };
 
-  // ✅ UPDATED: Place order - Navigate to Payment page
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
-    // Validate form
+    if (cartItems.length === 0) {
+      alert("Your cart is empty!");
+      navigate("/cart");
+      return;
+    }
+
     if (!formData.fullName || !formData.email || !formData.phone) {
       alert("Please fill in all required fields");
       return;
@@ -131,47 +109,77 @@ export const Checkout = () => {
 
     setLoading(true);
 
-    // Simulate order placement (API call)
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const orderData = {
+        items: cartItems.map((item) => ({
+          menuItemId: item.menuItemId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image,
+        })),
+        subtotal: subtotal,
+        deliveryCharge: deliveryCharge,
+        total: total,
+        deliveryAddress: {
+          street: formData.address.street,
+          city: formData.address.city,
+          state: formData.address.state,
+          pincode: formData.address.pincode,
+        },
+        estimatedDelivery: "15-20 minutes",
+        paymentMethod:
+          paymentMethods.find((m) => m.id === formData.paymentMethod)?.label ||
+          "Card",
+      };
 
-      // Generate unique order ID
-      const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+      const response = await api.post("/orders", orderData);
+      const order = response.data;
 
-      // ✅ NEW: Navigate to Payment page with order data
-      navigate("/payment", {
+      await clearCart();
+
+      navigate("/order-confirmation", {
         state: {
-          orderId: orderId,
-          date: new Date().toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          total: total,
-          subtotal: subtotal,
-          deliveryCharge: deliveryCharge,
-          items: cartItems.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            image: item.image,
-          })),
-          deliveryAddress: `${formData.address.street}, ${formData.address.city}, ${formData.address.state} - ${formData.address.pincode}`,
-          estimatedDelivery: "15-20 minutes",
-          paymentMethod:
-            paymentMethods.find((m) => m.id === formData.paymentMethod)
-              ?.label || "Card",
+          orderId: order.orderId,
+          date: new Date(order.createdAt).toLocaleString("en-IN"),
+          total: order.total,
+          items: order.items,
+          deliveryAddress: `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.state} - ${order.deliveryAddress.pincode}`,
+          estimatedDelivery: order.estimatedDelivery,
+          paymentMethod: order.paymentMethod,
         },
       });
-    }, 2000);
+    } catch (error) {
+      console.error("Order failed:", error);
+      alert(
+        error.response?.data?.error ||
+          "Failed to place order. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="checkout-page">
+        <div className="container">
+          <div className="empty-checkout">
+            <div className="empty-icon">🛒</div>
+            <h2>Your cart is empty</h2>
+            <p>Add items to your cart before checking out.</p>
+            <NavLink to="/menu" className="btn btn-primary btn-lg">
+              Browse Menu
+            </NavLink>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="checkout-page">
       <div className="container">
-        {/* Page Header */}
         <div className="checkout-header">
           <h1 className="page-title">Checkout</h1>
           <p className="page-subtitle">
@@ -179,7 +187,6 @@ export const Checkout = () => {
           </p>
         </div>
 
-        {/* Checkout Steps */}
         <div className="checkout-steps">
           <div className={`step ${step >= 1 ? "active" : ""}`}>
             <span className="step-number">1</span>
@@ -199,13 +206,11 @@ export const Checkout = () => {
 
         <form onSubmit={handlePlaceOrder}>
           <div className="checkout-content">
-            {/* Left Column - Forms */}
             <div className="checkout-left">
-              {/* Step 1: Address */}
+              {/* Address Section */}
               <div className="checkout-section">
                 <h2 className="section-title">📍 Delivery Address</h2>
 
-                {/* Saved Addresses */}
                 {savedAddresses.length > 0 && (
                   <div className="saved-addresses">
                     <label className="section-label">
@@ -215,7 +220,9 @@ export const Checkout = () => {
                       {savedAddresses.map((addr) => (
                         <div
                           key={addr.id}
-                          className={`address-option ${selectedAddress === addr.id ? "selected" : ""}`}
+                          className={`address-option ${
+                            selectedAddress === addr.id ? "selected" : ""
+                          }`}
                           onClick={() => handleAddressSelect(addr)}
                         >
                           <div className="address-option-header">
@@ -235,7 +242,6 @@ export const Checkout = () => {
                   </div>
                 )}
 
-                {/* Address Form */}
                 <div className="address-form">
                   <div className="form-row">
                     <div className="form-group">
@@ -349,14 +355,16 @@ export const Checkout = () => {
                 </div>
               </div>
 
-              {/* Step 2: Payment */}
+              {/* Payment Section */}
               <div className="checkout-section">
                 <h2 className="section-title">💳 Payment Method</h2>
                 <div className="payment-methods">
                   {paymentMethods.map((method) => (
                     <label
                       key={method.id}
-                      className={`payment-method ${formData.paymentMethod === method.id ? "selected" : ""}`}
+                      className={`payment-method ${
+                        formData.paymentMethod === method.id ? "selected" : ""
+                      }`}
                     >
                       <input
                         type="radio"
@@ -371,7 +379,6 @@ export const Checkout = () => {
                   ))}
                 </div>
 
-                {/* Card Details (if card selected) */}
                 {formData.paymentMethod === "card" && (
                   <div className="card-details">
                     <div className="form-group">
@@ -411,7 +418,6 @@ export const Checkout = () => {
                   </div>
                 )}
 
-                {/* UPI Details */}
                 {formData.paymentMethod === "upi" && (
                   <div className="upi-details">
                     <div className="form-group">
@@ -434,7 +440,7 @@ export const Checkout = () => {
                 )}
               </div>
 
-              {/* Step 3: Special Instructions */}
+              {/* Special Instructions */}
               <div className="checkout-section">
                 <h2 className="section-title">📝 Special Instructions</h2>
                 <div className="form-group">
@@ -450,17 +456,23 @@ export const Checkout = () => {
               </div>
             </div>
 
-            {/* Right Column - Order Summary */}
+            {/* Order Summary */}
             <div className="checkout-right">
               <div className="order-summary-card">
                 <h2 className="summary-title">Order Summary</h2>
 
-                {/* Items */}
                 <div className="summary-items">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="summary-item">
+                    <div key={item.menuItemId} className="summary-item">
                       <div className="summary-item-info">
-                        <span className="summary-item-image">{item.image}</span>
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="summary-item-image"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
                         <div className="summary-item-details">
                           <span className="summary-item-name">{item.name}</span>
                           <span className="summary-item-qty">
@@ -475,7 +487,6 @@ export const Checkout = () => {
                   ))}
                 </div>
 
-                {/* Pricing */}
                 <div className="summary-pricing">
                   <div className="pricing-row">
                     <span>Subtotal</span>
@@ -496,7 +507,6 @@ export const Checkout = () => {
                   </div>
                 </div>
 
-                {/* Promo Code */}
                 <div className="promo-section">
                   <input
                     type="text"
@@ -508,7 +518,6 @@ export const Checkout = () => {
                   </button>
                 </div>
 
-                {/* ✅ Place Order Button - Navigates to Payment */}
                 <button
                   type="submit"
                   className="btn btn-primary btn-block place-order-btn"
@@ -524,7 +533,6 @@ export const Checkout = () => {
                   )}
                 </button>
 
-                {/* Back to Cart */}
                 <NavLink to="/cart" className="back-to-cart">
                   ← Back to Cart
                 </NavLink>
