@@ -731,3 +731,207 @@
   object-fit: cover;
   flex-shrink: 0;
 }
+
+/* ERROR BANNER */
+.error-banner {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: 1px solid #fca5a5;
+}
+
+/* CONTINUE BUTTON */
+.continue-btn {
+  padding: 16px !important;
+  font-size: 1.05rem !important;
+  margin-top: 20px;
+}
+
+/* CHOSEN ADDRESS SUMMARY (Step 2) */
+.chosen-address {
+  background: #fff7ed;
+  border: 2px solid #f97316;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+
+.chosen-address-name {
+  font-size: 1rem;
+  color: #1f2937;
+  margin: 0 0 6px 0;
+}
+
+.chosen-address-line {
+  color: #4b5563;
+  font-size: 0.9rem;
+  margin: 0 0 6px 0;
+  line-height: 1.5;
+}
+
+.chosen-address-contact {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0 0 12px 0;
+}
+
+.change-address-btn {
+  background: white;
+  border: 2px solid #f97316;
+  color: #f97316;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.change-address-btn:hover {
+  background: #f97316;
+  color: white;
+}
+
+/* BACK TO ADDRESS BUTTON */
+.back-to-address-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: transparent;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.back-to-address-btn:hover {
+  border-color: #6b7280;
+  color: #1f2937;
+}
+
+.back-to-address-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* LOCKED USER INFO (read-only) */
+.locked-user-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: #f9fafb;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.locked-user-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.locked-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.locked-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.locked-info-note {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.profile-link {
+  color: #f97316;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.profile-link:hover {
+  color: #ea580c;
+  text-decoration: underline;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .locked-user-info {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.cod-note {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-top: 16px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid #a7f3d0;
+  text-align: center;
+}
+
+/* DELIVERY INFO BANNER */
+.delivery-info-banner {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.delivery-info-banner.pickup {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.delivery-info-banner.delivery {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+/* PICKUP NOTE IN STEP 2 */
+.pickup-note {
+  color: #065f46;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 8px 0 12px 0;
+  padding: 8px 12px;
+  background: #d1fae5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* FREE CHARGE (for self pickup) */
+.free-charge {
+  color: #10b981 !important;
+  font-weight: 700;
+}

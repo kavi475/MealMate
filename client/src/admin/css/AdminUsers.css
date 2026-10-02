@@ -395,3 +395,42 @@
   color: #6b7280;
   margin: 0;
 }
+
+/* YOU BADGE */
+.you-badge {
+  color: #f97316;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* ADDRESS CELL */
+.address-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.address-line {
+  line-height: 1.4;
+}
+
+.no-address {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* DISABLED DELETE BUTTON */
+.action-btn.delete:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.action-btn.delete:disabled:hover {
+  background: #f3f4f6;
+  color: #9ca3af;
+}

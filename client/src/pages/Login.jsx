@@ -129,7 +129,7 @@ export const Login = () => {
               </NavLink>
             </p>
 
-            <div className="demo-credentials">
+            {/* <div className="demo-credentials">
               <p className="demo-title">📧 Demo Credentials:</p>
               <p className="demo-item">
                 👤 User: john@university.edu / john123
@@ -137,7 +137,7 @@ export const Login = () => {
               <p className="demo-item">
                 👑 Admin: admin@mealmate.com / admin123
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

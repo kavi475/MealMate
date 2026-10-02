@@ -58,21 +58,18 @@ export const changePassword = async (req, res) => {
         .json({ error: "Password must be at least 6 characters" });
     }
 
-    // Get user WITH password
     const user = await User.findById(req.userId);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Check current password
     const isMatch = await user.comparePassword(currentPassword);
 
     if (!isMatch) {
       return res.status(400).json({ error: "Current password is incorrect" });
     }
 
-    // Update password (pre-save hook will hash it)
     user.password = newPassword;
     await user.save();
 
@@ -101,16 +98,67 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// @desc    Delete user
-// @route   DELETE /api/users/admin/:id
+// @desc    Update user (Admin)
+// @route   PUT /api/users/admin/:id
 // @access  Admin
-export const deleteUser = async (req, res) => {
+export const adminUpdateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const { name, phone, address, role } = req.body;
+
+    const user = await User.findById(req.params.id).select("-password");
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    // ⭐ Prevent editing other admins (except yourself)
+    if (user.role === "admin" && user._id.toString() !== req.userId) {
+      return res
+        .status(403)
+        .json({ error: "Cannot edit another admin account" });
+    }
+
+    // ⭐ Prevent changing role of an admin
+    if (user.role === "admin" && role && role !== "admin") {
+      return res.status(403).json({ error: "Cannot change admin role" });
+    }
+
+    user.name = name || user.name;
+    user.phone = phone || user.phone;
+    user.address = address || user.address;
+
+    await user.save();
+
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// @desc    Delete user (Admin)
+// @route   DELETE /api/users/admin/:id
+// @access  Admin
+export const deleteUser = async (req, res) => {
+  try {
+    // ⭐ Prevent self-deletion
+    if (req.params.id === req.userId) {
+      return res
+        .status(403)
+        .json({ error: "You cannot delete your own account" });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // ⭐ Prevent deleting other admins
+    if (user.role === "admin") {
+      return res.status(403).json({ error: "Cannot delete admin accounts" });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
 
     res.json({ message: "User deleted successfully" });
   } catch (error) {

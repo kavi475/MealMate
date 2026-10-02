@@ -279,3 +279,15 @@
   margin: 4px 0;
   font-family: "Courier New", monospace;
 }
+
+/* FORM SECTION HEADER */
+.form-section-header {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 0 8px 0;
+  border-bottom: 2px solid #f3f4f6;
+  margin: 20px 0 16px 0;
+}
