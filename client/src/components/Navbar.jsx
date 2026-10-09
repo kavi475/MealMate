@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import "../css/navbar.css";
@@ -30,11 +31,10 @@ export const Navbar = () => {
   };
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      logout();
-      closeAll();
-      navigate("/");
-    }
+    logout();
+    closeAll();
+    toast.success("Logged out successfully");
+    navigate("/");
   };
 
   return (

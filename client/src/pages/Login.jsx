@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import "../css/Auth.css";
 
@@ -33,6 +34,7 @@ export const Login = () => {
     setLoading(false);
 
     if (result.success) {
+      toast.success("Welcome back!");
       if (result.user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
@@ -96,13 +98,14 @@ export const Login = () => {
             </div>
 
             <div className="form-options">
-              <label className="checkbox-label">
-                <input type="checkbox" />
-                Remember me
-              </label>
-              <NavLink to="/forgot-password" className="forgot-link">
-                Forgot password?
-              </NavLink>
+              <div className="login-extras">
+                <label className="remember-me">
+                  <input type="checkbox" /> Remember me
+                </label>
+                <NavLink to="/forgot-password" className="forgot-link">
+                  Forgot password?
+                </NavLink>
+              </div>
             </div>
 
             <button
@@ -128,16 +131,6 @@ export const Login = () => {
                 Register here
               </NavLink>
             </p>
-
-            {/* <div className="demo-credentials">
-              <p className="demo-title">📧 Demo Credentials:</p>
-              <p className="demo-item">
-                👤 User: john@university.edu / john123
-              </p>
-              <p className="demo-item">
-                👑 Admin: admin@mealmate.com / admin123
-              </p>
-            </div> */}
           </div>
         </div>
       </div>

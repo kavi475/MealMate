@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import api from "../../utils/api";
+import { confirmToast } from "../../utils/confirmToast";
 import { useAuth } from "../../context/AuthContext";
 import "../css/AdminUsers.css";
 
@@ -13,7 +15,7 @@ export const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
 
-  // ⭐ Edit modal state
+  // Edit modal state
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editData, setEditData] = useState({});
@@ -39,26 +41,36 @@ export const AdminUsers = () => {
     fetchUsers();
   }, []);
 
-  // ⭐ Handle delete with protections
-  const handleDelete = async (id, name) => {
-    if (id === currentUser?.id) {
-      alert("❌ You cannot delete your own account");
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
-
+  const deleteUser = async (id, name) => {
     try {
       await api.delete(`/users/admin/${id}`);
       setSuccessMessage(`User "${name}" deleted successfully`);
       setTimeout(() => setSuccessMessage(""), 3000);
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to delete user");
+      toast.error(err.response?.data?.error || "Failed to delete user");
     }
   };
 
-  // ⭐ Open edit modal
+  //Handle delete with protections
+  const handleDelete = (id, name) => {
+    if (id === currentUser?.id) {
+      toast.error("You cannot delete your own account");
+      return;
+    }
+
+    confirmToast(
+      `Are you sure you want to delete "${name}"?`,
+      () => deleteUser(id, name),
+      {
+        confirmText: "Yes, delete",
+        cancelText: "Cancel",
+        variant: "danger",
+      },
+    );
+  };
+
+  // Open edit modal
   const handleEdit = (user) => {
     setEditingUser(user);
     setEditData({
@@ -75,7 +87,7 @@ export const AdminUsers = () => {
     setShowModal(true);
   };
 
-  // ⭐ Validation helpers
+  // Validation helpers
   const isValidName = (name) => /^[A-Za-z\s]{2,50}$/.test(name);
   const isValidPhone = (phone) => /^[0-9]{10}$/.test(phone);
   const isValidPincode = (pincode) => /^[0-9]{6}$/.test(pincode);
@@ -171,7 +183,7 @@ export const AdminUsers = () => {
       setShowModal(false);
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to update user");
+      toast.error(err.response?.data?.error || "Failed to update user");
     } finally {
       setSaving(false);
     }
@@ -393,7 +405,7 @@ export const AdminUsers = () => {
           )}
         </div>
 
-        {/* ⭐ EDIT USER MODAL */}
+        {/* EDIT USER MODAL */}
         {showModal && editingUser && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>

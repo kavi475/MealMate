@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../admin/css/AdminLayout.css";
+import { toast } from "react-hot-toast";
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
@@ -9,10 +10,9 @@ export const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      logout();
-      navigate("/");
-    }
+    logout();
+    toast.success("Logged out successfully");
+    navigate("/");
   };
 
   const navItems = [
@@ -20,6 +20,8 @@ export const AdminLayout = () => {
     { path: "/admin/menu", icon: "🍽️", label: "Menu" },
     { path: "/admin/orders", icon: "📦", label: "Orders" },
     { path: "/admin/users", icon: "👥", label: "Users" },
+    { path: "/admin/reviews", icon: "⭐", label: "Reviews" }, // ⭐ NEW
+    { path: "/admin/messages", icon: "📬", label: "Messages" },
     { path: "/admin/reports", icon: "📈", label: "Reports" },
   ];
 

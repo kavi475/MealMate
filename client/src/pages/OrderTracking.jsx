@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, useParams, useNavigate } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../utils/api";
+import { confirmToast } from "../utils/confirmToast";
 import "../css/OrderTracking.css";
 
 export const OrderTracking = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,20 +70,25 @@ export const OrderTracking = () => {
     }
   };
 
-  const handleCancelOrder = async () => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
-
+  const cancelOrder = async () => {
     try {
       await api.put(`/orders/${id}/cancel`);
-      alert("Order cancelled successfully!");
+      toast.success("Order cancelled successfully!");
       fetchOrder();
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to cancel order");
+      toast.error(err.response?.data?.error || "Failed to cancel order");
     }
   };
 
+  const handleCancelOrder = () => {
+    confirmToast("Cancel this order?", cancelOrder, {
+      confirmText: "Yes, cancel",
+      cancelText: "Keep order",
+    });
+  };
+
   const handleReorder = () => {
-    alert("Reorder feature coming soon!");
+    toast("Reorder feature coming soon!", { icon: "🔄" });
   };
 
   if (loading) {

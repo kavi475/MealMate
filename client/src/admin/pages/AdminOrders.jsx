@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import api from "../../utils/api";
+import { confirmToast } from "../../utils/confirmToast";
 import "../css/AdminOrders.css";
 
 export const AdminOrders = () => {
@@ -35,9 +37,6 @@ export const AdminOrders = () => {
     fetchOrders();
   }, []);
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ⭐ STATUS FLOW — Only forward
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const STATUS_ORDER = [
     "pending",
     "confirmed",
@@ -47,12 +46,10 @@ export const AdminOrders = () => {
   ];
 
   const getAvailableStatuses = (currentStatus) => {
-    // Cancelled is terminal — no changes allowed
     if (currentStatus === "cancelled") {
       return ["cancelled"];
     }
 
-    // Delivered is terminal — no changes allowed
     if (currentStatus === "delivered") {
       return ["delivered"];
     }
@@ -60,47 +57,48 @@ export const AdminOrders = () => {
     const currentIndex = STATUS_ORDER.indexOf(currentStatus);
     if (currentIndex === -1) return STATUS_ORDER;
 
-    // Only allow current status and forward statuses
     return STATUS_ORDER.slice(currentIndex);
   };
 
-  const handleStatusChange = async (orderId, currentStatus, newStatus) => {
-    // ⭐ Extra safety check
-    if (!isValidTransition(currentStatus, newStatus)) {
-      alert(`Cannot change status from "${currentStatus}" to "${newStatus}"`);
-      return;
-    }
-
-    if (
-      !window.confirm(
-        `Change order status from "${currentStatus}" to "${newStatus}"?`,
-      )
-    ) {
-      return;
-    }
-
+  const updateStatus = async (orderId, newStatus) => {
     setUpdatingId(orderId);
     try {
       await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      toast.success(`Order status changed to "${newStatus}"`);
       fetchOrders();
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to update status");
+      toast.error(err.response?.data?.error || "Failed to update status");
     } finally {
       setUpdatingId(null);
     }
   };
 
+  const handleStatusChange = (orderId, currentStatus, newStatus) => {
+    if (!isValidTransition(currentStatus, newStatus)) {
+      toast.error(
+        `Cannot change status from "${currentStatus}" to "${newStatus}"`,
+      );
+      return;
+    }
+
+    confirmToast(
+      `Change order status from "${currentStatus}" to "${newStatus}"?`,
+      () => updateStatus(orderId, newStatus),
+      {
+        confirmText: "Yes, change",
+        cancelText: "Cancel",
+        variant: newStatus === "cancelled" ? "danger" : "primary",
+      },
+    );
+  };
+
   const isValidTransition = (currentStatus, newStatus) => {
-    // Cancelled → nothing
     if (currentStatus === "cancelled") return false;
 
-    // Delivered → nothing
     if (currentStatus === "delivered") return false;
 
-    // Allow setting to cancelled anytime before delivered
     if (newStatus === "cancelled") return true;
 
-    // Otherwise, must move forward in the flow
     const currentIndex = STATUS_ORDER.indexOf(currentStatus);
     const newIndex = STATUS_ORDER.indexOf(newStatus);
 

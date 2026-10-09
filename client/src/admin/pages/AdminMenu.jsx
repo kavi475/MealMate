@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import api from "../../utils/api";
+import { confirmToast } from "../../utils/confirmToast";
 import "../css/AdminMenu.css";
 
 export const AdminMenu = () => {
@@ -97,7 +99,7 @@ export const AdminMenu = () => {
       !formData.price ||
       !formData.image
     ) {
-      alert(
+      toast.error(
         "Please fill in all required fields (name, description, price, image)",
       );
       return;
@@ -113,33 +115,43 @@ export const AdminMenu = () => {
 
       if (editingItem) {
         await api.put(`/menu/${editingItem._id}`, payload);
-        alert("Item updated successfully!");
+        toast.success("Item updated successfully!");
       } else {
         await api.post("/menu", payload);
-        alert("Item added successfully!");
+        toast.success("Item added successfully!");
       }
 
       setShowModal(false);
       fetchMenuItems();
     } catch (err) {
       console.error("Error saving item:", err);
-      alert(err.response?.data?.error || "Failed to save item");
+      toast.error(err.response?.data?.error || "Failed to save item");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
-
+  const deleteItem = async (id) => {
     try {
       await api.delete(`/menu/${id}`);
-      alert("Item deleted successfully!");
+      toast.success("Item deleted successfully!");
       fetchMenuItems();
     } catch (err) {
       console.error("Error deleting item:", err);
-      alert("Failed to delete item");
+      toast.error("Failed to delete item");
     }
+  };
+
+  const handleDelete = (id, name) => {
+    confirmToast(
+      `Are you sure you want to delete "${name}"?`,
+      () => deleteItem(id),
+      {
+        confirmText: "Yes, delete",
+        cancelText: "Cancel",
+        variant: "danger",
+      },
+    );
   };
 
   const handleToggleAvailability = async (id) => {
@@ -148,7 +160,7 @@ export const AdminMenu = () => {
       fetchMenuItems();
     } catch (err) {
       console.error("Error toggling availability:", err);
-      alert("Failed to update availability");
+      toast.error("Failed to update availability");
     }
   };
 

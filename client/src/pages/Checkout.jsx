@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
 import api from "../utils/api";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { generateUPILink, isValidUPIId } from "../utils/upiPyament";
 import "../css/Checkout.css";
 
 export const Checkout = () => {
@@ -13,6 +15,7 @@ export const Checkout = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [upiMode, setUpiMode] = useState("qr");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -49,7 +52,7 @@ export const Checkout = () => {
   const COLLEGE_ADDRESS = {
     street: "College Canteen, Block A",
     city: "University City",
-    state: "Delhi",
+    state: "Delhi", // ⭐ FIX: Ensures state is always present for College
     pincode: "110002",
     landmark: "Main Canteen Building",
   };
@@ -68,7 +71,7 @@ export const Checkout = () => {
       address: {
         street: user.address.street,
         city: user.address.city,
-        state: user.address.state || "",
+        state: user.address.state || "Delhi", // ⭐ FIX: Fallback state if missing
         pincode: user.address.pincode,
         landmark: user.address.landmark || "",
       },
@@ -110,10 +113,6 @@ export const Checkout = () => {
     }
   }, [selectedAddressType, user]);
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ⭐ DYNAMIC DELIVERY CHARGE
-  // College pickup = ₹0, Home/Other = ₹40
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const deliveryCharge = selectedAddressType === "college" ? 0 : 40;
   const total = subtotal + deliveryCharge;
   const isSelfPickup = selectedAddressType === "college";
@@ -124,6 +123,8 @@ export const Checkout = () => {
     { id: "cod", label: "Cash on Delivery", icon: "💰" },
   ];
 
+  const isValidName = (name) => /^[A-Za-z\s]{2,50}$/.test(name);
+  const isValidPhone = (phone) => /^[0-9]{10,15}$/.test(phone);
   const isValidPincode = (pincode) => /^[0-9]{6}$/.test(pincode);
   const isValidCity = (city) => /^[A-Za-z\s]{2,50}$/.test(city);
   const isValidState = (state) => /^[A-Za-z\s]{2,50}$/.test(state);
@@ -191,23 +192,36 @@ export const Checkout = () => {
     }
   };
 
+  // ━━━ STEP 1 → STEP 2 VALIDATION (FIXED) ━━━
   const handleContinueToPayment = () => {
     setError("");
+    const errors = [];
 
-    if (!formData.address.street.trim())
-      return setError("Please enter your street address");
-    if (!formData.address.city.trim())
-      return setError("Please enter your city");
-    if (!isValidCity(formData.address.city))
-      return setError("City must contain only letters");
-    if (!formData.address.state.trim())
-      return setError("Please enter your state");
-    if (!isValidState(formData.address.state))
-      return setError("State must contain only letters");
-    if (!formData.address.pincode.trim())
-      return setError("Please enter your pincode");
-    if (!isValidPincode(formData.address.pincode))
-      return setError("Pincode must be exactly 6 digits");
+    // ⭐ FIX: Only validate street, city, state, pincode if NOT College pickup
+    // If it's College, the data is already hardcoded and valid.
+    if (selectedAddressType !== "college") {
+      if (!formData.address.street.trim()) errors.push("Street address");
+      if (!formData.address.city.trim()) errors.push("City");
+      else if (!isValidCity(formData.address.city))
+        errors.push("City (letters only)");
+
+      // ⭐ THIS IS THE FIX FOR YOUR ERROR
+      if (!formData.address.state || !formData.address.state.trim()) {
+        errors.push("State");
+      } else if (!isValidState(formData.address.state)) {
+        errors.push("State (letters only)");
+      }
+
+      if (!formData.address.pincode.trim()) errors.push("Pincode");
+      else if (!isValidPincode(formData.address.pincode))
+        errors.push("Pincode (6 digits)");
+    }
+
+    if (errors.length > 0) {
+      setError(`Please fill: ${errors.join(", ")}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -232,11 +246,13 @@ export const Checkout = () => {
     }
 
     if (formData.paymentMethod === "upi") {
-      if (!formData.upiId.trim()) return "Please enter UPI ID";
-      if (!/^[\w.-]+@[\w.-]+$/.test(formData.upiId))
-        return "Please enter a valid UPI ID (e.g., name@upi)";
+      if (upiMode === "id") {
+        if (!formData.upiId.trim()) return "Please enter UPI ID";
+        if (!isValidUPIId(formData.upiId)) {
+          return "Invalid UPI ID. Format should be username@bank";
+        }
+      }
     }
-
     return null;
   };
 
@@ -272,7 +288,7 @@ export const Checkout = () => {
         deliveryAddress: {
           street: formData.address.street,
           city: formData.address.city,
-          state: formData.address.state,
+          state: formData.address.state, // ⭐ Ensures state is sent
           pincode: formData.address.pincode,
         },
         estimatedDelivery: isSelfPickup
@@ -356,7 +372,6 @@ export const Checkout = () => {
               <>
                 <div className="checkout-section">
                   <h2 className="section-title">👤 Contact Information</h2>
-
                   <div className="locked-user-info">
                     <div className="locked-user-field">
                       <span className="locked-label">Full Name</span>
@@ -371,7 +386,6 @@ export const Checkout = () => {
                       <span className="locked-value">{user?.phone || "—"}</span>
                     </div>
                   </div>
-
                   <div className="locked-info-note">
                     ℹ️ Need to change your details?{" "}
                     <NavLink to="/profile" className="profile-link">
@@ -382,7 +396,6 @@ export const Checkout = () => {
 
                 <div className="checkout-section">
                   <h2 className="section-title">📍 Delivery Address</h2>
-
                   <label className="section-label">
                     Where should we deliver?
                   </label>
@@ -414,7 +427,6 @@ export const Checkout = () => {
                     ))}
                   </div>
 
-                  {/* ⭐ Show delivery info banner */}
                   {selectedAddressType === "college" ? (
                     <div className="delivery-info-banner pickup">
                       🏫 Self-Pickup • No delivery charge. Pick up your order at
@@ -633,17 +645,114 @@ export const Checkout = () => {
 
                   {formData.paymentMethod === "upi" && (
                     <div className="upi-details">
-                      <div className="form-group">
-                        <label className="form-label">UPI ID</label>
-                        <input
-                          type="text"
-                          name="upiId"
-                          className="form-input"
-                          placeholder="yourname@upi"
-                          value={formData.upiId}
-                          onChange={handleChange}
-                        />
+                      <div className="upi-tabs">
+                        <button
+                          type="button"
+                          className={`upi-tab ${upiMode === "qr" ? "active" : ""}`}
+                          onClick={() => setUpiMode("qr")}
+                        >
+                          📱 Scan QR Code
+                        </button>
+                        <button
+                          type="button"
+                          className={`upi-tab ${upiMode === "id" ? "active" : ""}`}
+                          onClick={() => setUpiMode("id")}
+                        >
+                          ⌨️ Enter UPI ID
+                        </button>
                       </div>
+
+                      {upiMode === "qr" && (
+                        <div className="upi-qr-section">
+                          <p className="upi-qr-label">
+                            Scan this QR with any UPI app
+                          </p>
+                          <div className="qr-wrapper">
+                            <QRCode
+                              value={generateUPILink({
+                                upiId: "mealmate@upi",
+                                name: "MealMate Canteen",
+                                amount: total,
+                                note: "MealMate Order",
+                              })}
+                              size={200}
+                              level="H"
+                              bgColor="#ffffff"
+                              fgColor="#1f2937"
+                            />
+                            <div className="qr-amount-badge">₹{total}</div>
+                          </div>
+                          <p className="upi-qr-helper">
+                            Open GPay, PhonePe, Paytm, or any UPI app
+                          </p>
+                          <div className="upi-apps-row">
+                            <a
+                              href={generateUPILink({
+                                upiId: "mealmate@upi",
+                                name: "MealMate Canteen",
+                                amount: total,
+                                note: "MealMate Order",
+                              })}
+                              className="upi-app-btn"
+                            >
+                              <span>📱</span>
+                              <span>Open UPI App</span>
+                            </a>
+                          </div>
+                          <div className="upi-info-banner">
+                            ⓘ After payment, click "Place Order" below
+                          </div>
+                        </div>
+                      )}
+
+                      {upiMode === "id" && (
+                        <div className="upi-id-section">
+                          <div className="form-group">
+                            <label className="form-label">Your UPI ID</label>
+                            <input
+                              type="text"
+                              name="upiId"
+                              className={`form-input ${
+                                formData.upiId && !isValidUPIId(formData.upiId)
+                                  ? "input-error"
+                                  : formData.upiId &&
+                                      isValidUPIId(formData.upiId)
+                                    ? "input-success"
+                                    : ""
+                              }`}
+                              placeholder="yourname@upi"
+                              value={formData.upiId}
+                              onChange={handleChange}
+                              autoComplete="off"
+                            />
+                            {formData.upiId &&
+                              !isValidUPIId(formData.upiId) && (
+                                <div className="field-error">
+                                  ⚠️ Invalid UPI ID. Format: username@bank
+                                </div>
+                              )}
+                            {formData.upiId && isValidUPIId(formData.upiId) && (
+                              <div className="field-success">
+                                ✅ Valid UPI ID
+                              </div>
+                            )}
+                            {!formData.upiId && (
+                              <div className="password-hint">
+                                Example: johndoe@okhdfcbank or 9876543210@ybl
+                              </div>
+                            )}
+                          </div>
+                          <div className="upi-apps-row">
+                            <span className="upi-apps-label">Pay using:</span>
+                            <div className="upi-apps-list">
+                              <span className="upi-app-chip">📱 GPay</span>
+                              <span className="upi-app-chip">📱 PhonePe</span>
+                              <span className="upi-app-chip">📱 Paytm</span>
+                              <span className="upi-app-chip">📱 BHIM</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -683,11 +792,9 @@ export const Checkout = () => {
             )}
           </div>
 
-          {/* ORDER SUMMARY — dynamically shows charge */}
           <div className="checkout-right">
             <div className="order-summary-card">
               <h2 className="summary-title">Order Summary</h2>
-
               <div className="summary-items">
                 {cartItems.map((item) => (
                   <div key={item.menuItemId} className="summary-item">
@@ -719,8 +826,6 @@ export const Checkout = () => {
                   <span>Subtotal</span>
                   <span>₹{subtotal}</span>
                 </div>
-
-                {/* ⭐ DYNAMIC DELIVERY CHARGE */}
                 <div className="pricing-row">
                   <span>
                     {isSelfPickup ? "Self Pickup" : "Delivery Charge"}
@@ -729,7 +834,6 @@ export const Checkout = () => {
                     {isSelfPickup ? "FREE" : `₹${deliveryCharge}`}
                   </span>
                 </div>
-
                 <div className="pricing-divider"></div>
                 <div className="pricing-row total">
                   <span>Total</span>

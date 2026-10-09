@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import "../css/Profile.css";
@@ -193,10 +194,9 @@ export const Profile = () => {
   };
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      logout();
-      navigate("/");
-    }
+    logout();
+    toast.success("Logged out successfully");
+    navigate("/");
   };
 
   const getError = (field) => fieldErrors[field];

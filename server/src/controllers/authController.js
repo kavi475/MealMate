@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const generateToken = (userId, role) => {
@@ -91,5 +92,52 @@ export const getMe = async (req, res) => {
     res.json(user);
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+// Reset password (requires current password)
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "New password must be at least 6 characters." });
+    }
+
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        error: "New password must be different from your current password.",
+      });
+    }
+
+    const user = await User.findOne({
+      email: String(email).toLowerCase().trim(),
+    });
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: "Invalid email or current password." });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ error: "Invalid email or current password." });
+    }
+
+    // updateOne skips the pre-save hook, so we hash manually (hashed only once)
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await User.updateOne({ _id: user._id }, { $set: { password: hashed } });
+
+    res.json({ message: "Password updated successfully." });
+  } catch (error) {
+    res.status(500).json({ error: "Server error. Please try again." });
   }
 };

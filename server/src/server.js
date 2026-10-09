@@ -6,9 +6,12 @@ import authRoutes from "./routes/authRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
-import userRoutes from './routes/userRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
-import favoriteRoutes from './routes/favoriteRoutes.js';
+import userRoutes from "./routes/userRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import favoriteRoutes from "./routes/favoriteRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import adminReviewRoutes from "./routes/adminReviewRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -24,9 +27,12 @@ app.use("/api/auth", authRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/cart", cartRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/favorites', favoriteRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/admin/reviews", adminReviewRoutes); // must be before /api/admin
+app.use("/api/admin", adminRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/contact", contactRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

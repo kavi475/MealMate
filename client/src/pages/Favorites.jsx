@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../utils/api";
 import { useCart } from "../context/CartContext";
 import "../css/Favorites.css";
@@ -30,14 +31,13 @@ export const Favorites = () => {
   }, []);
 
   const removeFavorite = async (id) => {
-    if (!window.confirm("Remove from favorites?")) return;
-
     setProcessingId(id);
     try {
       await api.delete(`/favorites/${id}`);
       setFavorites((prev) => prev.filter((item) => item._id !== id));
+      toast.success("Removed from favorites");
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to remove favorite");
+      toast.error(err.response?.data?.error || "Failed to remove favorite");
     } finally {
       setProcessingId(null);
     }
@@ -49,9 +49,9 @@ export const Favorites = () => {
     setProcessingId(null);
 
     if (result.success) {
-      alert(`${item.name} added to cart!`);
+      toast.success(`${item.name} added to cart!`);
     } else {
-      alert(result.error);
+      toast.error(result.error || "Failed to add item");
     }
   };
 
